@@ -119,8 +119,17 @@
 					<section id="resumen" class="wrapper style1 fullscreen fade-up">
 						<div class="inner">
 							<h1>Resumen</h1>
+                            <div class="features">
+                                <section>
+                                    <h3>Composite score</h3>
+                                     <div id = "aster" style="float:left;" class="aster"></div>
+                                </section>
+                                <section>
+                                    <h3>Average student score</h3>
+                                 <div>{{student_score}}</div>
+                                </section>
+                            </div>
                                 <!-- here comes the radial plot --> 
-                                <div id = "aster" class="aster"></div>
 						</div>
 					</section>
 
@@ -171,7 +180,7 @@
 
         var pie = d3.layout.pie()
             .sort(null)
-            .value(function(d) { return d.width; });
+            .value(function(d) { return 1; });
 
         var tip = d3.tip()
           .attr('class', 'd3-tip')
@@ -200,22 +209,13 @@
 
         var data = {{ csv|safe }};
 
-        console.log(data);
-
-        //d3.csv('aster_data.csv', function(error, data) {
-
           data.forEach(function(d) {
-            d.id     =  d.id;
-            d.order  = +d.order;
-            d.color  =  d.color;
-            d.weight = +d.weight;
             d.score  = +d.score;
-            d.width  = +d.weight;
             d.label  =  d.label;
-        
+            d.id     =  d.id;
+            d.color  =  d.color;
           });
-          // for (var i = 0; i < data.score; i++) { console.log(data[i].id) }
-          
+
           var path = svg.selectAll(".solidArc")
               .data(pie(data))
             .enter().append("path")
@@ -236,14 +236,14 @@
 
 
           // calculate the weighted mean score
-          var score = 
-            data.reduce(function(a, b) {
-              //console.log('a:' + a + ', b.score: ' + b.score + ', b.weight: ' + b.weight);
-              return a + (b.score * b.weight); 
-            }, 0) / 
-            data.reduce(function(a, b) { 
-              return a + b.weight; 
-            }, 0);
+       var score =                                              
+           data.reduce(function(a, b) {                           
+                     //console.log('a:' + a + ', b.score: ' + b.score + ', b.weight: ' + b.weight);
+                     return a + (b.score * b.weight);                     
+                         }, 0) /  
+            data.reduce(function(a, b) {                           
+                  return a + b.weight;  
+          }, 0);
 
           svg.append("svg:text")
             .attr("class", "aster-score")
