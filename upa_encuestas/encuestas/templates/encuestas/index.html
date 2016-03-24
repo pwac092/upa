@@ -27,7 +27,7 @@
 				<div class="inner">
 					<nav>
 						<ul>
-                            <!--<li><a href="#agregar">Agregar evaluaci&oacute;n</a></li>-->
+                            <li><a href="/encuestas/add">Agregar evaluaci&oacute;n</a></li>
 							<li><a href="#clases">Clases</a></li>
 							<li><a href="#profesores">Profesores</a></li>
                             <!--<li><a href="#alumnos">Alumnos</a></li>-->
@@ -44,7 +44,7 @@
 							<h1>Agregar nueva evaluaci&oacute;n</h1>
 							<ul class="actions">
                                 {% for i in clases %}
-                                    <li><a href="/encuestas/lista_clase/{{i.1}}" class="button scrolly">{{i.0}}</a></li>
+                                    <li><a href="/encuestas/lista/{{i.1}}/1/" class="button scrolly">{{i.0}}</a></li>
                                 {% endfor %}
 							</ul>
 						</div>
@@ -56,7 +56,7 @@
 							<h1>Clases</h1>
 							<ul class="actions">
                                 {% for i in clases %}
-                                    <li><a href="/encuestas/lista_clase/{{i.1}}" class="button scrolly">{{i.0}}</a></li>
+                                    <li><a href="/encuestas/lista/{{i.1}}/1/" class="button scrolly">{{i.0}}</a></li>
                                 {% endfor %}
 							</ul>
 						</div>
@@ -68,7 +68,7 @@
 							<h1>Profesores</h1>
                             <ul class="actions">
                                 {% for i in profesores%}
-                                    <li><a href="/encuestas/lista_prof/{{i.1}}" class="button scrolly">{{i.0}}</a></li>
+                                    <li><a href="/encuestas/lista/{{i.1}}/2/" class="button scrolly">{{i.0}}</a></li>
                                 {% endfor %}
                             </ul>
                         </div>

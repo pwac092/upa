@@ -19,6 +19,70 @@
         <link rel="stylesheet" href="{% static "encuestas/assets/css/jquery-ui.css" %}">
         <link rel="stylesheet" href="{% static "encuestas/assets/css/style.css" %}">
 
+        <style>
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.bar {
+  fill: orange;
+}
+
+.solidArc:hover {
+  fill: orangered ;
+}
+
+.solidArc {
+    -moz-transition: all 0.3s;
+    -o-transition: all 0.3s;
+    -webkit-transition: all 0.3s;
+    transition: all 0.3s;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.aster-score { 
+  line-height: 1;
+  font-weight: bold;
+  font-size: 100%;
+}
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+        </style>
+
 	</head>
     
 	<body>
@@ -55,13 +119,8 @@
 					<section id="resumen" class="wrapper style1 fullscreen fade-up">
 						<div class="inner">
 							<h1>Resumen</h1>
-							<ul class="actions">
-                                {{composite_score}}
-                                {{student_score}}
-                                {% for i in comments%}
-                                    {{i}} <br>
-                                {%endfor%}
-							</ul>
+                                <!-- here comes the radial plot --> 
+                                <div id = "aster" class="aster"></div>
 						</div>
 					</section>
 
@@ -100,308 +159,102 @@
         <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
         <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
         <script src="http://d3js.org/d3.v3.min.js"></script>
-
-        <script>
-
-function breaklines(str, n) {
-    var lines = str.split(/\s+/), // explode on whitespaces
-        n = +n || 50;
-    var res = [];
-    for (var i=0; i<lines.length; ) {
-        for (var l = 0, line = []; l + lines[i].length <= n; i++) {
-            l += 1 + lines[i].length;
-            line.push(lines[i]);
-        }
-        res.push(line.join(" "));
-    }
-    return res.join("<br>");
-}
-
-
-var createHistogram = function(data, maxBin, binInc, title) {
-
-
-  // A formatter for counts.
-
-  var formatCount = d3.format(",.0f");
-
-  var totalWidth = 1080;
-
-  var totalHeight = 240;
-
-  var margin = {top: 40, right: 60, bottom: 50, left: 70},
-
-      width = totalWidth - margin.left - margin.right,
-
-      height = totalHeight - margin.top - margin.bottom;
-
-  
-
-  var binArray = [];
-
-  for (var i = 0; i <= maxBin + binInc; i += binInc) {
-
-    binArray.push(i);
-
-  }
-
-  var binTicks = [];
-
-  for (var i = 0; i < maxBin + binInc; i += binInc) {
-
-    binTicks.push(i);
-
-  }
-
-  
-
-  var x = d3.scale.linear()
-
-      .domain([0, maxBin + binInc])
-
-      .range([0, width]);
-
-  var binWidth = parseFloat(width / (binArray.length - 1)) - 1 - 150;
-
-  
-
-  var y = d3.scale.linear()
-
-      .domain([0, d3.max(data, function(d) { return d.y; })])
-
-      .range([height, 0]);
-
-  
-
-  var xAxis = d3.svg.axis()
-
-      .scale(x)
-
-      .orient("bottom")
-
-      .tickValues(binTicks);
-
-      
-
-  var yAxis = d3.svg.axis()
-
-      .scale(y)
-
-      .orient("left");
-
-  
-
-  var svg = d3.select("#detalle").append("svg")
-
-      .attr("width", width + margin.left + margin.right)
-
-      .attr("height", height + margin.top + margin.bottom)
-
-      .append("g")
-
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-  
-
-  var bar = svg.selectAll(".bar")
-
-      .data(data)
-
-      .enter()
-
-      .append("rect")
-
-      .attr("class", "bar")
-
-      .attr("x", function(d) { return x(d.x); })
-
-      .attr("width", binWidth)
-
-      .attr("y", function(d) { return y(d.y); })
-
-      .attr("height", function(d) { return height - y(d.y); })
-
-      .on("mouseover", function(d) {
-
-        var barWidth = parseFloat(d3.select(this).attr("width"));
-
-        var xPosition = parseFloat(d3.select(this).attr("x")) + (barWidth / 2);
-
-        var yPosition = parseFloat(d3.select(this).attr("y")) - 10;
-
-        
-
-        svg.append("text")
-
-          .attr("id", "tooltip")
-
-          .attr("x", xPosition)
-
-          .attr("y", yPosition)
-
-          .attr("text-anchor", "middle")
-
-          .text(d.y);
-
-      })
-
-      .on("mouseout", function(d) {
-
-        d3.select('#tooltip').remove();
-
-      });
-
-  
-
-  svg.append("g")
-
-      .attr("class", "x axis")
-
-      .attr("transform", "translate(0," + height + ")")
-
-      .call(xAxis);
-
-      
-
-  svg.append("g")
-
-      .attr("class", "y axis")
-
-      //.attr("transform", "translate(0," + height + ")")
-
-      .call(yAxis);
-
-      
-
-  // Add axis labels
-
-  svg.append("text")
-
-      .attr("class", "x label")
-
-      .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.bottom - 15) + ")")
-
-      //.attr("dy", "1em")
-
-      .attr("text-anchor", "middle")
-
-      .text("Score ");
-
-      
-
-  svg.append("text")
-
-      .attr("class", "y label")
-
-      .attr("transform", "rotate(-90)")
-
-      .attr("y", 0 - margin.left)
-
-      .attr("x", 0 - (height / 2))
-
-      .attr("dy", "1em")
-
-      .attr("text-anchor", "middle")
-
-      .text("Count");
-
-      
-
-  // Add title to chart
-
-  svg.append("text")
-
-      .attr("class", "title")
-
-      .attr("transform", "translate(" + (width - width) + " ," + (-10) + ")")
-
-      //.attr("dy", "1em")
-
-      .attr("text-anchor", "right")
-
-      .text(title);  
-
-};
-
-$( document ).ready(function() {
-
-    var json = {{ json|safe }};
-
-//    d3.json(json_data, function(json) {
-      
-
-      var maxBin = 4;
-
-      var binInc = 1;
-
-      for( var i = 0; i < json.length; i++) {
-
-        // use the name of the group to initialize the array
-
-        var group = json[i].name;
-
-        var data = [];
-
-        
-
-        // we have a max bin for our histogram, must ensure
-
-        // that any bins > maximum bin are rolled into the 
-
-        // last bin that we have
-
-        var binCounts = {};
-
-        for( var j = 0; j < json[i].data.length; j++) {
-
-          var xValue = json[i].data[j].bin;
-
-          // bin cannot exceed the maximum bin
-
-          xValue = ( xValue > maxBin ? maxBin : xValue);
-
-          var yValue = json[i].data[j].count;
-
-          
-
-          if(binCounts[xValue] === undefined) {
-
-            binCounts[xValue] = 0;
-
-          }
-
-          binCounts[xValue] += yValue;
-
-        }
-
-        
-
-        // add the bin counts in
-
-        for( var bin in binCounts) {
-
-          data.push({"x": bin, "y": binCounts[bin]});
-
-        }
-
-        
-
-        // add the histogram
-        //var line = breaklines(group.toUpperCase(),10)
-        var line = group.toUpperCase();
-
-
-        createHistogram(data, maxBin, binInc,line) 
-
-      }
-
-});
-
-
-    </script>
-
+        <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+        <script src="{% static "encuestas/assets/js/papaparse.min.js" %}"></script>
 
   </body>
+  <script>
+        var width = 200,
+            height = 200,
+            radius = Math.min(width, height) / 2,
+            innerRadius = 0.3 * radius;
+
+        var pie = d3.layout.pie()
+            .sort(null)
+            .value(function(d) { return d.width; });
+
+        var tip = d3.tip()
+          .attr('class', 'd3-tip')
+          .offset([0, 0])
+          .html(function(d) {
+            return d.data.label + ": <span style='color:orangered'>" + d.data.score + "</span>";
+          });
+
+        var arc = d3.svg.arc()
+          .innerRadius(innerRadius)
+          .outerRadius(function (d) { 
+            return (radius - innerRadius) * (d.data.score / 100.0) + innerRadius; 
+          });
+
+        var outlineArc = d3.svg.arc()
+                .innerRadius(innerRadius)
+                .outerRadius(radius);
+
+        var svg = d3.select("#aster").append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("g")
+            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+        svg.call(tip);
+
+        var data = {{ csv|safe }};
+
+        console.log(data);
+
+        //d3.csv('aster_data.csv', function(error, data) {
+
+          data.forEach(function(d) {
+            d.id     =  d.id;
+            d.order  = +d.order;
+            d.color  =  d.color;
+            d.weight = +d.weight;
+            d.score  = +d.score;
+            d.width  = +d.weight;
+            d.label  =  d.label;
+        
+          });
+          // for (var i = 0; i < data.score; i++) { console.log(data[i].id) }
+          
+          var path = svg.selectAll(".solidArc")
+              .data(pie(data))
+            .enter().append("path")
+              .attr("fill", function(d) { return d.data.color; })
+              .attr("class", "solidArc")
+              .attr("stroke", "gray")
+              .attr("d", arc)
+              .on('mouseover', tip.show)
+              .on('mouseout', tip.hide);
+
+          var outerPath = svg.selectAll(".outlineArc")
+              .data(pie(data))
+            .enter().append("path")
+              .attr("fill", "none")
+              .attr("stroke", "gray")
+              .attr("class", "outlineArc")
+              .attr("d", outlineArc);  
+
+
+          // calculate the weighted mean score
+          var score = 
+            data.reduce(function(a, b) {
+              //console.log('a:' + a + ', b.score: ' + b.score + ', b.weight: ' + b.weight);
+              return a + (b.score * b.weight); 
+            }, 0) / 
+            data.reduce(function(a, b) { 
+              return a + b.weight; 
+            }, 0);
+
+          svg.append("svg:text")
+            .attr("class", "aster-score")
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle") // text-align: right
+            .text(Math.round(score));
+
+        //});
+
+
+  </script>
 
 
 </html>

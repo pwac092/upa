@@ -1,4 +1,4 @@
-from django.shortcuts import render,loader, HttpResponse
+from django.shortcuts import render,loader, HttpResponse, redirect
 from collections import defaultdict
 import json
 
@@ -16,25 +16,44 @@ def index(request):
     context = { 'profesores': profesores, 'clases': clases}
     return HttpResponse(template.render(context, request))
 
-def lista_encuestas_profesor(request, profesor):
-    template = loader.get_template('encuestas/list_encuestas.html')
-    nombre_profesor = Profesor.objects.get(id = profesor)
+def lista_encuestas(request, en, en_type):
 
-    encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(profesor = profesor)]
+    template = loader.get_template('encuestas/list.html')
 
-    context = {'entity':' el Profesor ', 'entity_name':nombre_profesor.nombre, 'encuestas': encuestas}
+    if en_type == "1": #clases. horrible, but works.
+        nombre_clase = Clase.objects.get(id = en)
+        encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(clase = en)]
+        entity_name = ' la clase ' + nombre_clase.nombre + ' '
+    else:
+        nombre_profesor = Profesor.objects.get(id = en)
+        encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(profesor = en)]
+        entity_name = ' el Profesor ' + nombre_profesor.nombre + ' '
+
+    if not encuestas:
+        encuestas = list()
+
+    context = {'entity_type': en_type, 'entity': entity_name, 'encuestas': encuestas}
+
     return HttpResponse(template.render(context, request))
 
-def lista_encuestas_clase(request, clase):
-    template = loader.get_template('encuestas/list_encuestas.html')
+def add(request):
+    pass
 
-    nombre_clase = Clase.objects.get(id = clase)
+def delete(request, encuesta, en):
+    #get the clase and profesor this encuesta belongs to.
 
-    encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(clase = clase)]
+    encuesta = Encuesta.objects.get(id = encuesta)
 
-    context = {'entity':' la clase ', 'entity_name':nombre_clase, 'encuestas': encuestas}
+    if en == "1":
+        entity = encuesta.clase.id
+    else:
+        entity = encuesta.profesor.id
 
-    return HttpResponse(template.render(context, request))
+    encuesta.delete()
+
+    context = {'en': str(entity), 'entity_type':str(en)}
+    return redirect('lista', en=str(entity), en_type=str(en))
+
 
 def processEncuesta(request, encuesta):
     tags = {
@@ -129,6 +148,10 @@ def processEncuesta(request, encuesta):
     #final json data.
     final_json = json.dumps(json_data)
 
-    context = {'json':final_json, 'composite_score' : composite_score, 'student_score': average_student_score, 'comments':comments}
+    csv = [{'weight': '0.5', 'color': '#9E0041', 'label': 'Fisheries', 'score': '59', 'order': '1.1', 'id': 'FIS'}, {'weight': '0.5', 'color': '#C32F4B', 'label': 'Mariculture', 'score': '24', 'order': '1.3', 'id': 'MAR'}, {'weight': '1', 'color': '#E1514B', 'label': 'Artisanal Fishing Opportunities', 'score': '98', 'order': '2', 'id': 'AO'}, {'weight': '1', 'color': '#F47245', 'label': 'Natural Products', 'score': '60', 'order': '3', 'id': 'NP'}, {'weight': '1', 'color': '#FB9F59', 'label': 'Carbon Storage', 'score': '74', 'order': '4', 'id': 'CS'}, {'weight': '1', 'color': '#FEC574', 'label': 'Coastal Protection', 'score': '70', 'order': '5', 'id': 'CP'}, {'weight': '1', 'color': '#FAE38C', 'label': 'Tourism &  Recreation', 'score': '42', 'order': '6', 'id': 'TR'}, {'weight': '0.5', 'color': '#EAF195', 'label': 'Livelihoods', 'score': '77', 'order': '7.1', 'id': 'LIV'}, {'weight': '0.5', 'color': '#C7E89E', 'label': 'Economies', 'score': '88', 'order': '7.3', 'id': 'ECO'}, {'weight': '0.5', 'color': '#9CD6A4', 'label': 'Iconic Species', 'score': '60', 'order': '8.1', 'id': 'ICO'}, {'weight': '0.5', 'color': '#6CC4A4', 'label': 'Lasting Special Places', 'score': '65', 'order': '8.3', 'id': 'LSP'}, {'weight': '1', 'color': '#4D9DB4', 'label': 'Clean Waters', 'score': '71', 'order': '9', 'id': 'CW'}, {'weight': '0.5', 'color': '#4776B4', 'label': 'Habitats', 'score': '88', 'order': '10.1', 'id': 'HAB'}, {'weight': '0.5', 'color': '#5E4EA1', 'label': 'Species', 'score': '83', 'order': '10.3', 'id': 'SPP'}]
+
+    final_csv = json.dumps(csv)
+
+    context = {'csv' : final_csv, 'json':final_json, 'composite_score' : composite_score, 'student_score': average_student_score, 'comments':comments}
 
     return HttpResponse(template.render(context, request))

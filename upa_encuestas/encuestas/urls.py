@@ -4,7 +4,8 @@ from . import views
 
 urlpatterns = [
             url(r'^$', views.index, name='index'),
-            url(r'^lista_clase/(?P<clase>\d+)/$', views.lista_encuestas_clase, name='lista_clase'),
-            url(r'^lista_prof/(?P<profesor>\d+)/$', views.lista_encuestas_profesor,name='lista_profesor'),
+            url(r'^lista/(?P<en>\d+)/(?P<en_type>\d+)/$', views.lista_encuestas, name='lista'),
             url(r'^process/(?P<encuesta>\d+)/$', views.processEncuesta,name='process'),
+            url(r'^add/$', views.add,name='add'),
+            url(r'^delete/(?P<encuesta>\d+)/(?P<en>\d+)/$', views.delete,name='delete'),
             ]
