@@ -1,8 +1,14 @@
 from django.shortcuts import render,loader, HttpResponse, redirect
+from django.contrib.auth import authenticate, login
 from django.utils.html import escape
+from django.template import RequestContext
 from collections import defaultdict
-import json, csv
+import json, csv, io
 from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
+
 
 
 # Create your views here.
@@ -13,8 +19,11 @@ from . import Questionaire
 
 # Upload form
 @csrf_exempt
+@login_required
 def upload_file(request, en, en_type):
-    content = str(request.FILES['file'].read())
+
+    content = request.FILES['file'].read()
+
     if en_type == "1":
         clase = Clase.objects.get(id = en)
         e = Encuesta(profesor = None, clase = clase, csv =content)
@@ -25,6 +34,7 @@ def upload_file(request, en, en_type):
     return redirect('lista', en=str(en), en_type=str(en_type))
 ########
 
+@login_required
 def index(request):
     template = loader.get_template('encuestas/index.html')
 
@@ -34,6 +44,7 @@ def index(request):
     context = { 'profesores': profesores, 'clases': clases}
     return HttpResponse(template.render(context, request))
 
+@login_required
 def lista_encuestas(request, en, en_type):
 
     template = loader.get_template('encuestas/list.html')
@@ -41,11 +52,11 @@ def lista_encuestas(request, en, en_type):
     if en_type == "1": #clases. horrible, but works.
         nombre_clase = Clase.objects.get(id = en)
         encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(clase = en).order_by('-fecha_creacion')]
-        entity_name = ' la clase ' + nombre_clase.nombre + ' '
+        entity_name =nombre_clase.nombre 
     else:
         nombre_profesor = Profesor.objects.get(id = en)
         encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(profesor = en).order_by('-fecha_creacion')]
-        entity_name = ' el Profesor ' + nombre_profesor.nombre + ' '
+        entity_name = nombre_profesor.nombre 
 
     if not encuestas:
         encuestas = list()
@@ -54,6 +65,7 @@ def lista_encuestas(request, en, en_type):
 
     return HttpResponse(template.render(context, request))
 
+@login_required
 def delete(request, encuesta, en):
     #get the clase and profesor this encuesta belongs to.
 
@@ -70,11 +82,15 @@ def delete(request, encuesta, en):
     return redirect('lista', en=str(entity), en_type=str(en))
 
 
+@login_required
 def processEncuesta(request, encuesta):
 
     colours = [ '#5d8aa8', '#f0f8ff', '#e32636', '#efdecd', '#e52b50', '#ffbf00', '#ff033e', '#9966cc', '#a4c639', '#f2f3f4', '#cd9575', '#915c83', '#faebd7', '#008000', '#8db600', '#fbceb1', '#00ffff']
 
-    transformation = {'Totalmente de acuerdo':4, 'Generalmente de acuerdo':3, 'Generalmente en desacuerdo':2, 'Totalmente en desacuerdo':1}
+    transformation = {'Totalmente de acuerdo':10, 'Generalmente de acuerdo':7.5, 'Generalmente en desacuerdo':5, 'Totalmente en desacuerdo':1}
+
+    #THIS IS UGLY as shit. This needs to go in the database so that we can configure it. But not now.
+    user_comment = ['Nombre de usuario','P18. ¿Qué sugerencias tienes para mejorar el modulo?        ']
 
     template = loader.get_template('encuestas/results.html')
     #get the csv data from the database and start the parser.
@@ -82,27 +98,88 @@ def processEncuesta(request, encuesta):
     #load the results
 
     csvdata = encuesta.csv
-    reader = csv.DictReader(csvdata,quotechar='"', dialect=csv.QUOTE_ALL)
+    reader = csv.DictReader(io.StringIO(csvdata),quotechar='"', dialect=csv.QUOTE_ALL, delimiter=',', lineterminator='\n')
+
     next(reader, None)  # skip the header
     #get the valid headers. This we will have to modify later in the future.
     valid = list()
     for i in (range(1,20)):
         valid.append('P'+str(i))
     #prepare for the values
-    values = defaultdict(list)
+    values = dict()
+    #prepare for the students and the comments
+    comments = list()
+    students = list()
+    student_score = list()
     for row in reader:
+        #get the comments and such
+        comments.append((row['Nombre de usuario'], row['P18. ¿Qué sugerencias tienes para mejorar el modulo?        ']))
+        students.append(row['Nombre de usuario'])
+        if row['P19. Por favor de una evaluacion simple del 1-10 de este modulo']:
+            student_score.append(int(row['P19. Por favor de una evaluacion simple del 1-10 de este modulo']))
         for key in row.keys():
-            if key.strip().split('.')[0] in valid:   
-                transformed_value = process_file_value(row[key])
-                if row[key]:
-                    if row[key] in transformation.keys():
-                        values[key].append(transformation[row[key]])
-
+            if row[key] and (key.strip().split('.')[0] in valid) and row[key] in transformation.keys():
+                if key in values:
+                    values[key].append(transformation[row[key]])
+                else:
+                    values[key] = list()
+    final_csv = list()
     for key in values.keys():
-        if key.split('.')[0] in headers:
-            csv.append({'weight':1, 'score' : np.mean(values[key]), 'label': escape(key), 'id':key.split('.')[0], 'color': tags[int(key.split('.')[0][2:])]})
+        if key.split('.')[0] in valid:
+            final_csv.append({'weight': 1, 'score' : np.mean(values[key]), 'label': key, 'id':key.split('.')[0], 'color': colours[valid.index(key.split('.')[0])]})
+    final_csv = json.dumps(final_csv)
 
-    final_csv = json.dumps(csv)
+    #now we need to get the comments and the students
 
-    context = {'csv' : final_csv, 'student_score': average_student_score, 'comments':comments, 'students':students}
+    context = {'csv' : final_csv, 'student_score': np.mean(student_score), 'comments':comments, 'students': students}
     return HttpResponse(template.render(context, request))
+
+
+def user_login(request):
+    template = loader.get_template('encuestas/login.html')
+    # Like before, obtain the context for the user's request.
+    context = RequestContext(request)
+
+    # If the request is a HTTP POST, try to pull out the relevant information.
+    if request.method == 'POST':
+        # Gather the username and password provided by the user.
+        # This information is obtained from the login form.
+        username = request.POST['username']
+        password = request.POST['password']
+
+        # Use Django's machinery to attempt to see if the username/password
+        # combination is valid - a User object is returned if it is.
+        user = authenticate(username=username, password=password)
+
+        # If we have a User object, the details are correct.
+        # If None (Python's way of representing the absence of a value), no user
+        # with matching credentials was found.
+        if user:
+            # Is the account active? It could have been disabled.
+            if user.is_active:
+                # If the account is valid and active, we can log the user in.
+                # We'll send the user back to the homepage.
+                login(request, user)
+                return HttpResponseRedirect('/encuestas/')
+            else:
+                # An inactive account was used - no logging in!
+                return HttpResponse("Your Rango account is disabled.")
+        else:
+            # Bad login details were provided. So we can't log the user in.
+            return HttpResponse("Invalid login details supplied.")
+
+    # The request is not a HTTP POST, so display the login form.
+    # This scenario would most likely be a HTTP GET.
+    else:
+        # No context variables to pass to the template system, hence the
+        # blank dictionary object...
+        return HttpResponse(template.render(context, request))
+
+
+# Use the login_required() decorator to ensure only those logged in can access the view.
+@login_required
+def user_logout(request):
+    # Since we know the user is logged in, we can now just log them out.
+    logout(request)
+    # Take the user back to the homepage.
+    return HttpResponseRedirect('/encuestas/')

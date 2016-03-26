@@ -8,4 +8,7 @@ urlpatterns = [
             url(r'^process/(?P<encuesta>\d+)/$', views.processEncuesta,name='process'),
             url(r'^delete/(?P<encuesta>\d+)/(?P<en>\d+)/$', views.delete,name='delete'),
             url(r'^upload/(?P<en>\d+)/(?P<en_type>\d+)/$', views.upload_file, name='upload'),
+            url(r'^login/$', views.user_login, name='login'),
+            url(r'^logout/$', views.user_logout, name='logout'),
+
             ]

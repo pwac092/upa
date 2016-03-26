@@ -22,6 +22,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '@w-sq@4!5-r#7wi1xqtlq3m$%kduyis3pyyde@lxq_s#ccok+2'
 
+LOGIN_URL = '/encuestas/login/'
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 

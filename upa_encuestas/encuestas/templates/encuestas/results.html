@@ -95,8 +95,10 @@
                             <!--<li><a href="#agregar">Agregar evaluaci&oacute;n</a></li>-->
 							<li><a href="#resumen">Resumen</a></li>
 							<li><a href="#comentarios">Comentarios</a></li>
-							<li><a href="#detalle">Detalle</a></li>
-                            <!--<li><a href="#alumnos">Alumnos</a></li>-->
+							<li><a href="/encuestas/">Inicio</a></li>
+                            {% if user.is_authenticated %}
+                            <li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>
+                            {%endif%}
 						</ul>
 					</nav>
 				</div>
@@ -122,10 +124,10 @@
 							<h1>Resumen</h1>
                             <div class="features">
                                 <section>
-                                    <h3>Composite score</h3>
+                                    <h3>Promedio</h3>
                                      <div id = "aster" class="aster"></div>
-                                    <h3>Average student score</h3>
-                                     <div>{{student_score}}</div>
+                                    <h3>Puntaje dado por estudiantes</h3>
+                                     <div>{{student_score|floatformat}}</div>
                                 </section>
                                 <section>
                                     <label for="students">Buscar estudiantes</label>
@@ -140,21 +142,33 @@
 					<section id="comentarios" class="wrapper style1 fullscreen fade-up">
 						<div class="inner">
 							<h1>Comentarios</h1>
-                                <ul class="actions">
-                                    {% for i in comments %}
-                                        <li> {{i.0}}: {{i.1}} </li>
-                                    {% endfor %}
-                                </ul>
+									<div class="table-wrapper">
+										<table>
+											<thead>
+												<tr>
+													<th>Estudiante</th>
+													<th>Comentario</th>
+												</tr>
+											</thead>
+											<tbody>
+                                                {% for i in comments %}
+                                                <tr>
+                                                    <td>{{i.0}}</td><td>{{i.1}}</td>
+                                                </tr>
+                                                {% endfor %}
+											</tfoot>
+										</table>
+									</div>
                             </div>
 						</div>
 					</section>
 				<!-- One -->
-					<section id="detalle" class="wrapper style1 fullscreen fade-up">
+					<!--<section id="detalle" class="wrapper style1 fullscreen fade-up">
 						<div class="inner">
 							<h1>Detalle</h1>
                             <div id="detalle"></div>
                         </div>
-					</section>
+                        </section>-->
 
 				<!-- Two 
 					<section id="alumnos" class="wrapper style3 fade-up">
@@ -163,15 +177,6 @@
 						</div>
                         </section>-->
 			</div>
-
-		<!-- Footer -->
-			<footer id="footer" class="wrapper style1-alt">
-				<div class="inner">
-					<ul class="menu">
-						<li>&copy; Untitled. All rights reserved.</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
-					</ul>
-				</div>
-			</footer>
 
 		<!-- Scripts -->
         <script src="{%static "encuestas/assets/js/jquery.min.js" %}"></script>
@@ -188,6 +193,17 @@
 
   </body>
   <script>
+            function chunkString(str, size) {
+                  var numChunks = Math.ceil(str.length / size),
+                      chunks = new Array(numChunks);
+
+                    for(var i = 0, o = 0; i < numChunks; ++i, o += size) {
+                            chunks[i] = str.substr(o, size);
+                              }
+
+                    return chunks.join('<br>');
+            }
+
         var width = 200,
             height = 200,
             radius = Math.min(width, height) / 2,
@@ -201,13 +217,13 @@
           .attr('class', 'd3-tip')
           .offset([0, 0])
           .html(function(d) {
-            return d.data.label + ": <span style='color:orangered'>" + d.data.score + "</span>";
+            return chunkString(d.data.label,45) + ": <span style='color:orangered'>" + d.data.score.toFixed(2) + "</span>";
           });
 
         var arc = d3.svg.arc()
           .innerRadius(innerRadius)
           .outerRadius(function (d) { 
-            return (radius - innerRadius) * (d.data.score / 100.0) + innerRadius; 
+            return (radius - innerRadius) * (d.data.score / 10.0) + innerRadius; 
           });
 
         var outlineArc = d3.svg.arc()
