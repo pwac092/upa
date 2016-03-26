@@ -94,6 +94,7 @@
 						<ul>
                             <!--<li><a href="#agregar">Agregar evaluaci&oacute;n</a></li>-->
 							<li><a href="#resumen">Resumen</a></li>
+							<li><a href="#comentarios">Comentarios</a></li>
 							<li><a href="#detalle">Detalle</a></li>
                             <!--<li><a href="#alumnos">Alumnos</a></li>-->
 						</ul>
@@ -122,17 +123,31 @@
                             <div class="features">
                                 <section>
                                     <h3>Composite score</h3>
-                                     <div id = "aster" style="float:left;" class="aster"></div>
+                                     <div id = "aster" class="aster"></div>
+                                    <h3>Average student score</h3>
+                                     <div>{{student_score}}</div>
                                 </section>
                                 <section>
-                                    <h3>Average student score</h3>
-                                 <div>{{student_score}}</div>
+                                    <label for="students">Buscar estudiantes</label>
+                                    <input type="text" name="students" id="students">
+                                    <br>
+                                    <div id="validStudents"></div>
                                 </section>
                             </div>
-                                <!-- here comes the radial plot --> 
 						</div>
 					</section>
 
+					<section id="comentarios" class="wrapper style1 fullscreen fade-up">
+						<div class="inner">
+							<h1>Comentarios</h1>
+                                <ul class="actions">
+                                    {% for i in comments %}
+                                        <li> {{i.0}}: {{i.1}} </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+						</div>
+					</section>
 				<!-- One -->
 					<section id="detalle" class="wrapper style1 fullscreen fade-up">
 						<div class="inner">
@@ -251,10 +266,22 @@
             .attr("text-anchor", "middle") // text-align: right
             .text(Math.round(score));
 
-        //});
-
-
-  </script>
+        //for the autcomplete of the students.
+        var availableTags = {{students|safe}};
+        $("#students").autocomplete({
+            source: availableTags,
+            response: function( event, ui ) {
+                $("#validStudents").empty();
+                for (var i = 0; i < ui.content.length; i++) {
+                    console.log(ui.content[i].value);
+                    $("#validStudents").append("<p>"+ui.content[i].value+"</p>");
+                }
+            },
+            open: function( event, ui ) {
+                $(".ui-autocomplete").hide();
+            }
+        });
+</script>
 
 
 </html>
