@@ -82,18 +82,14 @@ def delete(request, encuesta, en):
     return redirect('lista', en=str(entity), en_type=str(en))
 
 
-@login_required
-def processEncuesta(request, encuesta):
+def __processEncuesta(encuesta, valid):
 
-    colours = [ '#5d8aa8', '#f0f8ff', '#e32636', '#efdecd', '#e52b50', '#ffbf00', '#ff033e', '#9966cc', '#a4c639', '#f2f3f4', '#cd9575', '#915c83', '#faebd7', '#008000', '#8db600', '#fbceb1', '#00ffff']
 
     transformation = {'Totalmente de acuerdo':10, 'Generalmente de acuerdo':7.5, 'Generalmente en desacuerdo':5, 'Totalmente en desacuerdo':1}
 
     #THIS IS UGLY as shit. This needs to go in the database so that we can configure it. But not now.
     user_comment = ['Nombre de usuario','P18. ¿Qué sugerencias tienes para mejorar el modulo?        ']
 
-    template = loader.get_template('encuestas/results.html')
-    #get the csv data from the database and start the parser.
     encuesta = Encuesta.objects.get(id = encuesta)
     #load the results
 
@@ -101,10 +97,6 @@ def processEncuesta(request, encuesta):
     reader = csv.DictReader(io.StringIO(csvdata),quotechar='"', dialect=csv.QUOTE_ALL, delimiter=',', lineterminator='\n')
 
     next(reader, None)  # skip the header
-    #get the valid headers. This we will have to modify later in the future.
-    valid = list()
-    for i in (range(1,20)):
-        valid.append('P'+str(i))
     #prepare for the values
     values = dict()
     #prepare for the students and the comments
@@ -123,17 +115,52 @@ def processEncuesta(request, encuesta):
                     values[key].append(transformation[row[key]])
                 else:
                     values[key] = list()
+
+    return (values,student_score, students, comments)
+
+def processEncuesta(request, encuesta):
+    template = loader.get_template('encuestas/results.html')
+    colours = [ '#5d8aa8', '#f0f8ff', '#e32636', '#efdecd', '#e52b50', '#ffbf00', '#ff033e', '#9966cc', '#a4c639', '#f2f3f4', '#cd9575', '#915c83', '#faebd7', '#008000', '#8db600', '#fbceb1', '#00ffff']
+
+    #get the valid headers. This we will have to modify later in the future.
+    valid = list()
+    for i in (range(1,20)):
+        valid.append('P'+str(i))
+
+    (values,student_score, students,comments) =  __processEncuesta(encuesta, valid)
+
     final_csv = list()
     for key in values.keys():
         if key.split('.')[0] in valid:
             final_csv.append({'weight': 1, 'score' : np.mean(values[key]), 'label': key, 'id':key.split('.')[0], 'color': colours[valid.index(key.split('.')[0])]})
     final_csv = json.dumps(final_csv)
 
-    #now we need to get the comments and the students
-
-    context = {'csv' : final_csv, 'student_score': np.mean(student_score), 'comments':comments, 'students': students}
+    context = {'csv' : final_csv, 'student_score': np.mean(student_score),'en_id':encuesta, 'comments':comments, 'students': students}
     return HttpResponse(template.render(context, request))
 
+def details(request, encuesta):
+    template = loader.get_template('encuestas/details.html')
+    #get the valid headers. This we will have to modify later in the future.
+    valid = list()
+    for i in (range(1,20)):
+        valid.append('P'+str(i))
+
+    (values,x,x, x) =  __processEncuesta(encuesta,valid)
+    json_data = list()
+    composite_score = 0 
+    for tag in values.keys():
+        data = []
+        for bin in [0,1,2,3,4]:
+            data.append({'bin': bin, 'count':values[tag].count(bin)})
+            #add the score to determine the composite score afterwards.
+            composite_score += values[tag].count(bin)
+        histogram = {'name': tag , 'data':data}
+        json_data.append(histogram)
+    #the composite score is just the average score
+    final_json = json.dumps(json_data)
+
+    context = {'json' : final_json}
+    return HttpResponse(template.render(context, request))
 
 def user_login(request):
     template = loader.get_template('encuestas/login.html')

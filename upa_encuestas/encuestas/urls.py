@@ -6,6 +6,7 @@ urlpatterns = [
             url(r'^$', views.index, name='index'),
             url(r'^lista/(?P<en>\d+)/(?P<en_type>\d+)/$', views.lista_encuestas, name='lista'),
             url(r'^process/(?P<encuesta>\d+)/$', views.processEncuesta,name='process'),
+            url(r'^details/(?P<encuesta>\d+)/$', views.details,name='details'),
             url(r'^delete/(?P<encuesta>\d+)/(?P<en>\d+)/$', views.delete,name='delete'),
             url(r'^upload/(?P<en>\d+)/(?P<en_type>\d+)/$', views.upload_file, name='upload'),
             url(r'^login/$', views.user_login, name='login'),
