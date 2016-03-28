@@ -18,111 +18,30 @@
         <link rel="stylesheet" href="{% static "encuestas/assets/css/main.css" %}" />
         <link rel="stylesheet" href="{% static "encuestas/assets/css/jquery-ui.css" %}">
         <link rel="stylesheet" href="{% static "encuestas/assets/css/style.css" %}">
-
-        <style>
-.axis path,
-.axis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
-
-.bar {
-  fill: orange;
-}
-
-.solidArc:hover {
-  fill: orangered ;
-}
-
-.solidArc {
-    -moz-transition: all 0.3s;
-    -o-transition: all 0.3s;
-    -webkit-transition: all 0.3s;
-    transition: all 0.3s;
-}
-
-.x.axis path {
-  display: none;
-}
-
-.aster-score { 
-  line-height: 1;
-  font-weight: bold;
-  font-size: 100%;
-}
-
-.d3-tip {
-  line-height: 1;
-  font-weight: bold;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  border-radius: 2px;
-}
-
-/* Creates a small triangle extender for the tooltip */
-.d3-tip:after {
-  box-sizing: border-box;
-  display: inline;
-  font-size: 10px;
-  width: 100%;
-  line-height: 1;
-  color: rgba(0, 0, 0, 0.8);
-  content: "\25BC";
-  position: absolute;
-  text-align: center;
-}
-
-/* Style northward tooltips differently */
-.d3-tip.n:after {
-  margin: -1px 0 0 0;
-  top: 100%;
-  left: 0;
-}
-
-        </style>
-
 	</head>
     
 	<body>
 
 		<!-- Sidebar -->
-			<section id="sidebar">
-				<div class="inner">
-					<nav>
-						<ul>
-                            <!--<li><a href="#agregar">Agregar evaluaci&oacute;n</a></li>-->
-							<li><a href="#resumen">Resumen</a></li>
-							<li><a href="#comentarios">Comentarios</a></li>
-							<li><a href="/encuestas/">Inicio</a></li>
-                            <li><a href="/encuestas/details/{{en_id}}">Detalles</a></li>
-                            {% if user.is_authenticated %}
+        <section id="sidebar">
+                <nav>
+                    <ul>
+                        <li><a href="/encuestas/">Inicio</a></li>
+                        <li><a href="#comentarios">Comentarios</a></li>
+                        <li><a href="/encuestas/details/{{en_id}}">Detalles</a></li>
+                        {% if user.is_authenticated %}
                             <li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>
-                            {%endif%}
-						</ul>
-					</nav>
-				</div>
-			</section>
+                        {%endif%}
+                    </ul>
+                </nav>
+        </section>
+		<!-- Header -->
 
 		<!-- Wrapper -->
 			<div id="wrapper">
 				<!-- Intro -->
-					<!--<section id="agregar" class="wrapper style1 fullscreen fade-up">
-						<div class="inner">
-							<h1>Agregar nueva evaluaci&oacute;n</h1>
-							<ul class="actions">
-                                {% for i in clases %}
-                                    <li><a href="/encuestas/lista_clase/{{i.1}}" class="button scrolly">{{i.0}}</a></li>
-                                {% endfor %}
-							</ul>
-						</div>
-                        </section>-->
-
-				<!-- Intro -->
 					<section id="resumen" class="wrapper style1 fullscreen fade-up">
 						<div class="inner">
-							<h1>Resumen</h1>
                             <div class="features">
                                 <section>
                                     <h3>Promedio</h3>
@@ -142,7 +61,7 @@
 
 					<section id="comentarios" class="wrapper style1 fullscreen fade-up">
 						<div class="inner">
-							<h1>Comentarios</h1>
+                            <h2>Comentarios</h2>
 									<div class="table-wrapper">
 										<table>
 											<thead>
@@ -190,20 +109,18 @@
         <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
         <script src="http://d3js.org/d3.v3.min.js"></script>
         <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
-        <script src="{% static "encuestas/assets/js/papaparse.min.js" %}"></script>
 
   </body>
+
   <script>
-            function chunkString(str, size) {
-                  var numChunks = Math.ceil(str.length / size),
-                      chunks = new Array(numChunks);
 
-                    for(var i = 0, o = 0; i < numChunks; ++i, o += size) {
-                            chunks[i] = str.substr(o, size);
-                              }
-
-                    return chunks.join('<br>');
-            }
+        function chunkString(str, size) {
+              var numChunks = Math.ceil(str.length / size), chunks = new Array(numChunks);
+                for(var i = 0, o = 0; i < numChunks; ++i, o += size) {
+                    chunks[i] = str.substr(o, size);
+                }
+                return chunks.join('<br>');
+        }
 
         var width = 200,
             height = 200,

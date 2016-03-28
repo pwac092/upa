@@ -1,3 +1,4 @@
+{% load staticfiles %}
 <!DOCTYPE HTML>
 <!--
 	Hyperspace by HTML5 UP
@@ -8,11 +9,15 @@
 	<head>
 		<title>Elements - Hyperspace by HTML5 UP</title>
 		<meta charset="utf-8" />
+        <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/css/ie9.css" %}" />![endif]-->
+        <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/css/ie8.css" %}" />![endif]-->
+        <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/js/ie/html5shiv.js" %}" />![endif]-->
+
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<!--[if lte IE 8]><script src="assets/js/ie/html5shiv.js"></script><![endif]-->
-		<link rel="stylesheet" href="assets/css/main.css" />
-		<!--[if lte IE 9]><link rel="stylesheet" href="assets/css/ie9.css" /><![endif]-->
-		<!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
+
+        <link rel="stylesheet" href="{% static "encuestas/assets/css/main.css" %}" />
+        <link rel="stylesheet" href="{% static "encuestas/assets/css/jquery-ui.css" %}">
+
 	</head>
 	<body>
 
@@ -355,13 +360,15 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 			</footer>
 
 		<!-- Scripts -->
-			<script src="assets/js/jquery.min.js"></script>
-			<script src="assets/js/jquery.scrollex.min.js"></script>
-			<script src="assets/js/jquery.scrolly.min.js"></script>
-			<script src="assets/js/skel.min.js"></script>
-			<script src="assets/js/util.js"></script>
-			<!--[if lte IE 8]><script src="assets/js/ie/respond.min.js"></script><![endif]-->
-			<script src="assets/js/main.js"></script>
+		<!-- Scripts -->
+        <script src="{%static "encuestas/assets/js/jquery.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/jquery.scrollex.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/jquery.scrolly.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/skel.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/util.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/main.js" %}"></script>
+        <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
+        <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
 
 	</body>
 </html>

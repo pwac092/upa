@@ -1,0 +1,66 @@
+<!DOCTYPE HTML>
+<!--
+	Hyperspace by HTML5 UP
+	html5up.net | @n33co
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+{% load staticfiles %}
+<html>
+	<head>
+		<title>Encuestas UPA</title>
+		<meta charset="utf-8" />
+        <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/css/ie9.css" %}" />![endif]-->
+        <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/css/ie8.css" %}" />![endif]-->
+        <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/js/ie/html5shiv.js" %}" />![endif]-->
+
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <link rel="stylesheet" href="{% static "encuestas/assets/css/main.css" %}" />
+        <link rel="stylesheet" href="{% static "encuestas/assets/css/jquery-ui.css" %}">
+
+	</head>
+    
+	<body>
+
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+					<section id="clases" class="wrapper style1 fullscreen fade-up">
+						<div class="inner">
+                            <!DOCTYPE html>
+                            <html>
+                                <head>
+                                    <title>UPA login</title>
+                                </head>
+
+                                <body>
+                                    <h1>Login</h1>
+
+                                    <form id="login_form" method="post" action="/encuestas/login/">
+                                        {% csrf_token %}
+                                        Nombre de usuario: <input type="text" name="username" value="" size="50" />
+                                        <br />
+                                        Contrase&ntilde;a: <input type="password" name="password" value="" size="50" />
+                                        <br />
+
+                                        <input type="submit" value="Iniciar" />
+                                    </form>
+
+                                </body>
+                            </html>
+
+						</div>
+					</section>
+
+			</div>
+		<!-- Scripts -->
+        <script src="{%static "encuestas/assets/js/jquery.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/jquery.scrollex.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/jquery.scrolly.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/skel.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/util.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/main.js" %}"></script>
+        <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
+        <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
+	</body>
+</html>

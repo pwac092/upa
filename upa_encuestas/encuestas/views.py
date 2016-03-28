@@ -15,8 +15,6 @@ from django.contrib.auth import logout
 import numpy as np
 from .models import Profesor, Clase, Encuesta
 
-from . import Questionaire
-
 # Upload form
 @csrf_exempt
 @login_required
@@ -204,6 +202,10 @@ def user_login(request):
 
 
 # Use the login_required() decorator to ensure only those logged in can access the view.
+def elements(request):
+    template = loader.get_template('encuestas/elements.html')
+    return HttpResponse(template.render({}, request))
+
 @login_required
 def user_logout(request):
     # Since we know the user is logged in, we can now just log them out.

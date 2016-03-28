@@ -11,5 +11,6 @@ urlpatterns = [
             url(r'^upload/(?P<en>\d+)/(?P<en_type>\d+)/$', views.upload_file, name='upload'),
             url(r'^login/$', views.user_login, name='login'),
             url(r'^logout/$', views.user_logout, name='logout'),
+            url(r'^elements/$', views.elements, name='elements'),
 
             ]

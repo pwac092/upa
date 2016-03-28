@@ -1,0 +1,100 @@
+<!DOCTYPE HTML>
+<!--
+	Hyperspace by HTML5 UP
+	html5up.net | @n33co
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+{% load staticfiles %}
+<html>
+	<head>
+		<title>Encuestas UPA</title>
+		<meta charset="utf-8" />
+        <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/css/ie9.css" %}" />![endif]-->
+        <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/css/ie8.css" %}" />![endif]-->
+        <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/js/ie/html5shiv.js" %}" />![endif]-->
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="{% static "encuestas/assets/css/main.css" %}" />
+        <link rel="stylesheet" href="{% static "encuestas/assets/css/jquery-ui.css" %}">
+	</head>
+    
+	<body>
+
+		<!-- Header -->
+		<!-- Sidebar -->
+			<section id="sidebar">
+					<nav>
+						<ul>
+                            <li><a href="#lista">Lista de encuestas</a></li>
+							<li><a href="#agregar">Agregar encuesta</a></li>
+                            {% if user.is_authenticated %}
+                                <li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>
+                            {%endif%}
+						</ul>
+					</nav>
+			</section>
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+				<!-- Intro -->
+					<section id="lista" class="wrapper style1 fullscreen fade-up">
+						<div class="inner">
+                            <h1>{{entity}}</h1>
+                            {% if encuestas|length > 0 %}
+                                <a href="/encuestas/process/{{encuestas.0.1}}/" class="button scrolly">{{encuestas.0.0}}</a>
+                                    {% if encuestas|length > 1 %}
+                                    <div style="margin-top:15px">
+                                        <a href="#" id="scrollableTag" class="fa fa-expand">Mostrar m&aacute;s</a>
+                                        <div id="scrollable">
+                                            <ul class="actions">
+                                                {% for i in encuestas|slice:"1:" %}
+                                                    <li><a href="/encuestas/process/{{i.1}}/" class="button scrolly">{{i.0}}</a></li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    {%endif%}
+                            {% else %}
+                                <h4>No hay encuestas</h4>
+                            {%endif%}
+						</div>
+					</section>
+		<!-- Wrapper -->
+				<!-- Intro -->
+					<section id="agregar" class="wrapper style1 fullscreen fade-up">
+						<div class="inner">
+                            <h1>Agregar encuesta</h1>
+                            <form action="/encuestas/upload/{{entity_id}}/{{entity_type}}/" method="post" enctype="multipart/form-data">
+                                    <input type="file" name="fileToUpload" id="fileToUpload">
+                                    <input id="submit" type="submit" value="Subir" name="submit">
+                            </form>
+						</div>
+					</section>
+			</div>
+
+		<!-- Scripts -->
+        <script src="{%static "encuestas/assets/js/jquery.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/jquery.scrollex.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/jquery.scrolly.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/skel.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/util.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/main.js" %}"></script>
+        <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
+        <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
+        <script>
+            $( document ).ready(function() {
+                $('#submit').prop("disabled", true);
+
+                $('#fileToUpload').on("change", function() {
+                    $('#submit').prop('disabled', !$(this).val()); 
+                });
+
+                $("#scrollable").hide();
+
+                $( "#scrollableTag" ).click(function() {
+                    $('#scrollable').toggle();
+                });
+
+            });
+        </script>
+	</body>
+</html>
