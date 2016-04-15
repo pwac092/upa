@@ -1,0 +1,492 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+{% load staticfiles %}
+<html  xmlns="http://www.w3.org/1999/xhtml"
+       xml:lang="en-US"
+       lang="en-US">
+    <head profile="http://www.w3.org/2005/10/profile">
+        <title>Detalles</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+        <meta name="Description" content="This page tries to mix charts with html formatting and layout constructs." />
+        <meta http-equiv="pragma" content="no-cache" />
+        <meta http-equiv="cache-control" content="no-cache" />
+        <meta http-equiv="expires" content="-l" />
+
+        <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.4.5"></script>
+
+
+        <script type="text/javascript">
+
+// This example draws horizontal bar charts...
+// Created by Frank Guerino : "http://www.guerino.net"
+
+// Data Used for this example...
+var dataSet = {{json|safe}};
+
+/*var dataSet2 = [
+  {legendLabel: "Legend String 8", magnitude: 31, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 9", magnitude: 54, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html#RELATED_TERMS"},
+  {legendLabel: "Legend String 10", magnitude: 21, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 11", magnitude: 31, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html#RELATED_TERMS"},
+  {legendLabel: "Legend String 12", magnitude: 54, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 13", magnitude: 14, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html#RELATED_TERMS"},
+  {legendLabel: "Legend String 14", magnitude: 14, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 15", magnitude: 27, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html#RELATED_TERMS"}];
+
+  var dataSet3 = [
+  {legendLabel: "Legend String 16", magnitude: 21, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 17", magnitude: 41, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html#RELATED_TERMS"},
+  {legendLabel: "Legend String 18", magnitude: 34, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 19", magnitude: 9, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html#RELATED_TERMS"},
+  {legendLabel: "Legend String 20", magnitude: 47, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 21", magnitude: 17, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html#RELATED_TERMS"},
+  {legendLabel: "Legend String 22", magnitude: 47, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 23", magnitude: 37, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html#RELATED_TERMS"},
+  {legendLabel: "Legend String 24", magnitude: 47, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 25", magnitude: 4, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html#RELATED_TERMS"},
+  {legendLabel: "Legend String 26", magnitude: 18, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 27", magnitude: 41, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Data_Visualization_Management_Home_Page.html#RELATED_TERMS"},
+  {legendLabel: "Legend String 28", magnitude: 37, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html"},
+  {legendLabel: "Legend String 29", magnitude: 27, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html#RELATED_TERMS"}];
+ */
+
+
+function drawHorizontalBarChart(chartID, dataSet, selectString, colors) {
+
+    // chartID => A unique drawing identifier that has no spaces, no "." and no "#" characters.
+    // dataSet => Input Data for the chart, itself.
+    // selectString => String that allows you to pass in
+    //           a D3 select string.
+    // colors => String to set color scale.  Values can be...
+    //           => "colorScale10"
+    //           => "colorScale20"
+    //           => "colorScale20b"
+    //           => "colorScale20c"
+
+    var canvasWidth = 700;
+    var barsWidthTotal = 300
+        var barHeight = 20;
+    var barsHeightTotal = barHeight * dataSet.length;
+    //var canvasHeight = 200;
+    var canvasHeight = dataSet.length * barHeight + 10; // +10 puts a little space at bottom.
+    var legendOffset = barHeight/2;
+    var legendBulletOffset = 30;
+    var legendTextOffset = 20;
+
+    var x = d3.scale.linear().domain([0, d3.max(dataSet, function(d) { return d.magnitude; })]).rangeRound([0, barsWidthTotal]);
+    var y = d3.scale.linear().domain([0, dataSet.length]).range([0, barsHeightTotal]);
+
+    // Color Scale Handling...
+    var colorScale = d3.scale.category20c();
+    switch (colors)
+    {
+        case "colorScale10":
+            colorScale = d3.scale.category10();
+            break;
+        case "colorScale20":
+            colorScale = d3.scale.category20();
+            break;
+        case "colorScale20b":
+            colorScale = d3.scale.category20b();
+            break;
+        case "colorScale20c":
+            colorScale = d3.scale.category20c();
+            break;
+        default:
+            colorScale = d3.scale.category20c();
+    };
+
+    var synchronizedMouseOver = function() {
+        var bar = d3.select(this);
+        var indexValue = bar.attr("index_value");
+
+        var barSelector = "." + "bars-" + chartID + "-bar-" + indexValue;
+        var selectedBar = d3.selectAll(barSelector);
+        selectedBar.style("fill", "Maroon");
+
+        var bulletSelector = "." + "bars-" + chartID + "-legendBullet-" + indexValue;
+        var selectedLegendBullet = d3.selectAll(bulletSelector);
+        selectedLegendBullet.style("fill", "Maroon");
+
+        var textSelector = "." + "bars-" + chartID + "-legendText-" + indexValue;
+        var selectedLegendText = d3.selectAll(textSelector);
+        selectedLegendText.style("fill", "Maroon");
+    };
+
+    var synchronizedMouseOut = function() {
+        var bar = d3.select(this);
+        var indexValue = bar.attr("index_value");
+
+        var barSelector = "." + "bars-" + chartID + "-bar-" + indexValue;
+        var selectedBar = d3.selectAll(barSelector);
+        var colorValue = selectedBar.attr("color_value");
+        selectedBar.style("fill", colorValue);
+
+        var bulletSelector = "." + "bars-" + chartID + "-legendBullet-" + indexValue;
+        var selectedLegendBullet = d3.selectAll(bulletSelector);
+        var colorValue = selectedLegendBullet.attr("color_value");
+        selectedLegendBullet.style("fill", colorValue);
+
+        var textSelector = "." + "bars-" + chartID + "-legendText-" + indexValue;
+        var selectedLegendText = d3.selectAll(textSelector);
+        selectedLegendText.style("fill", "Blue");
+    };
+
+    // Create the svg drawing canvas...
+    var canvas = d3.select(selectString)
+        .append("svg:svg")
+        //.style("background-color", "yellow")
+        .attr("width", canvasWidth)
+        .attr("height", canvasHeight);
+
+    // Draw individual hyper text enabled bars...
+    canvas.selectAll("rect")
+        .data(dataSet)
+        .enter().append("svg:a")
+        .attr("xlink:href", function(d) { return d.link; })
+        .append("svg:rect")
+        // NOTE: the "15 represents an offset to allow for space to place magnitude
+        // at end of bars.  May have to address this better, possibly by placing the
+        // magnitude within the bars.
+        //.attr("x", function(d) { return barsWidthTotal - x(d.magnitude) + 15; }) // Left to right
+        .attr("x", 0) // Right to left
+        .attr("y", function(d, i) { return y(i); })
+        .attr("height", barHeight)
+        .on('mouseover', synchronizedMouseOver)
+        .on("mouseout", synchronizedMouseOut)
+        .style("fill", "White" )
+        .style("stroke", "White" )
+        .transition()
+        .ease("bounce")
+        .duration(1500)
+        .delay(function(d, i) { return i * 100; })
+        .attr("width", function(d) { return x(d.magnitude); })
+        .style("fill", function(d, i) { colorVal = colorScale(i); return colorVal; } )
+        .attr("index_value", function(d, i) { return "index-" + i; })
+        .attr("class", function(d, i) { return "bars-" + chartID + "-bar-index-" + i; })
+        .attr("color_value", function(d, i) { return colorScale(i); }) // Bar fill color...
+        .style("stroke", "white"); // Bar border color...
+
+
+    // Create text values that go at end of each bar...
+    canvas.selectAll("text")
+        .data(dataSet) // Bind dataSet to text elements
+        .enter().append("svg:text") // Append text elements
+        .attr("x", x)
+        .attr("y", function(d, i) { return y(i); })
+        //.attr("y", function(d) { return y(d) + y.rangeBand() / 2; })
+        //.attr("dx", function(d) { return x(d.magnitude) - 5; })
+        .attr("dx", function(d) { if (d.magnitude == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                x(d.magnitude) - 5; 
+            }
+        })
+        .attr("dy", barHeight-5) // vertical-align: middle
+        .attr("text-anchor", "end") // text-align: right
+        .text(function(d) { return d.magnitude;})
+        .attr("fill", "White");
+
+    // Plot the bullet circles...
+    canvas.selectAll("circle")
+        .data(dataSet).enter().append("svg:circle") // Append circle elements
+        .attr("cx", barsWidthTotal + legendBulletOffset)
+        .attr("cy", function(d, i) { return legendOffset + i*barHeight; } )
+        .attr("stroke-width", ".5")
+        .style("fill", function(d, i) { return colorScale(i); }) // Bar fill color
+        .attr("index_value", function(d, i) { return "index-" + i; })
+        .attr("class", function(d, i) { return "bars-" + chartID + "-legendBullet-index-" + i; })
+        .attr("r", 5)
+        .attr("color_value", function(d, i) { return colorScale(i); }) // Bar fill color...
+        .on('mouseover', synchronizedMouseOver)
+        .on("mouseout", synchronizedMouseOut);
+
+    // Create hyper linked text at right that acts as label key...
+    canvas.selectAll("a.legend_link")
+        .data(dataSet) // Instruct to bind dataSet to text elements
+        .enter().append("svg:a") // Append legend elements
+        .attr("xlink:href", function(d) { return d.link; })
+        .append("text")
+        .attr("text-anchor", "center")
+        .attr("x", barsWidthTotal + legendBulletOffset + legendTextOffset)
+        //.attr("y", function(d, i) { return legendOffset + i*20 - 10; })
+        .attr("y", function(d, i) { return legendOffset + i*barHeight; } )
+        .attr("dx", 0)
+        .attr("dy", "5px") // Controls padding to place text above bars
+        .text(function(d) { return d.legendLabel;})
+        .style("fill", "Blue")
+        .attr("index_value", function(d, i) { return "index-" + i; })
+        .attr("class", function(d, i) { return "bars-" + chartID + "-legendText-index-" + i; })
+        .on('mouseover', synchronizedMouseOver)
+        .on("mouseout", synchronizedMouseOut);
+
+};
+
+        </script>
+
+        <style type="text/css">
+
+        </style>
+
+
+
+        <STYLE type="text/css">
+div.div_Header {
+    width: 100%;
+    border:2px solid White;
+    border-radius:7px;
+    background: WhiteSmoke;
+    font: bold 14px Arial;
+    font-family:Arial, Helvetica, sans-serif;
+    color:WhiteSmoke;
+    text-align:center;
+}
+      h1.h1_BodyHeader {
+          text-align:center;
+          font: bold 1.5em Arial;
+      }
+      h2.h2_LeftMenuHeader {
+          text-align:center;
+          font: bold 1.2em Arial;
+      }
+      h3.h3_Body {
+          text-align:center;
+      }
+      p.p_Red {
+          color:Red;
+      }
+      table.table_Header {
+          width: 100%;
+          text-align:center;
+      }
+      td.td_HeaderLeft {
+          text-align:left;
+      }
+      td.td_HeaderRight {
+          text-align:right;
+      }
+      div.div_Menu {
+          width: 100%;
+          border:2px solid White;
+          border-radius:7px;
+          background: MidnightBlue;
+          font: bold 14px Arial;
+          font-family:Arial, Helvetica, sans-serif;
+          color:White;
+          text-align:center;
+      }
+      p.p_Left {
+          font-family:Arial, Helvetica, sans-serif;
+          color:Black;
+          text-align:left;
+          padding-left: 5px;
+          font: normal 14px Arial;
+      }
+      table.table_Body {
+          width: 100%;
+          height: 100%;
+          padding: 0;
+      }
+      td.td_BodyLeft {
+          width: 250px;
+          height: 100%;
+          padding: 0;
+      }
+      li.li_LeftMenu {
+          text-align:left;
+          font: normal 14px Arial;
+      }
+      a.a_LeftMenuNoUnderLine {
+          text-decoration:  none;
+      }
+      div.div_Body {
+          height: 100%;
+          width: 100%;
+          position: relative;
+          border:2px solid White;
+          border-radius:7px;
+          background: WhiteSmoke;
+          font: bold 14px Arial;
+          font-family:Arial, Helvetica, sans-serif;
+          color:Black;
+          text-align:center;
+      }
+      div.div_Footer {
+          width: 100%;
+          border:2px solid White;
+          border-radius:7px;
+          background: MidnightBlue;
+          font: bold 14px Arial;
+          font-family:Arial, Helvetica, sans-serif;
+          color:White;
+          text-align:center;
+      }
+      p.p_if4itMessage {
+          width: 100%;
+          background: White;
+          font: bold .75em Arial;
+          font-family:Arial, Helvetica, sans-serif;
+          color:GoldenRod;
+          text-align:center;
+      }
+      .menuButton{
+          background-color: MidnightBlue;
+      }
+      .menuButton li{
+          height: 100%;
+          list-style: none;
+          display: inline;
+      }
+      .menuButton li a{
+          height: 100%;
+          padding: 3px 0.5em;
+          text-decoration: none;
+          color: White;
+          background-color: MidnightBlue;
+          border: 2px solid MidnightBlue;
+      }
+      .menuButton li a:hover{
+          height: 100%;
+          color: MidnightBlue;
+          background-color: White;
+          border-style: outset;
+          background-color: White;
+      }
+      .menuButton li a:active{
+          height: 100%;
+          border-style: inset;
+          color: MidnightBlue;
+          background-color: White;
+      }
+      .menuButton li a.disabled{
+          height: 100%;
+          padding: 3px 0.5em;
+          text-decoration: none;
+          color: MidnightBlue;
+          background-color: White;
+          border: 2px solid MidnightBlue;
+          border-style: inset;
+          border-color: White;
+      }
+        </STYLE>
+
+        <STYLE type="text/css">
+div.div_RootBody {
+    position: relative;
+    border:2px solid White;
+    border-radius:7px;
+    background: WhiteSmoke;
+    font: normal 14px Arial;
+    font-family:Arial, Helvetica, sans-serif;
+    color:Black;
+    padding: 0px 1em;
+    text-align:left;
+}
+        </STYLE>
+
+        <!--[if gt IE 7]>
+            <style>body { overflow-y:scroll; } </style>
+            <![endif]-->
+
+    </head>
+
+    <body>
+
+        <div class="div_RootBody" id="bar_chart_1">
+            <h3 class="h3_Body"> P1. Los objetivos de aprendizaje del módulo son comprensibles </h3>
+            <div class="chart"></div>
+        </div> 
+
+        <div class="div_RootBody" id="bar_chart_2">
+            <h3 class="h3_Body"> P3. El curso logra hacerme entender la materia </h3>
+            <div class="chart"></div>
+        </div>
+
+        <div class="div_RootBody" id="bar_chart_3">
+            <h3 class="h3_Body"> P3. El curso logra despertar mi interés hacia el contenido </h3>
+            <div class="chart"></div>
+        </div>
+
+        <div class="div_RootBody" id="bar_chart_4">
+            <h3 class="h3_Body"> P4. Las metas de aprendizaje están bien formuladas </h3>
+            <div class="chart"></div>
+        </div>
+
+
+
+        <div class="div_RootBody" id="bar_chart_5"><h3 class="h3_Body"> P5. Hay una alineacion (relacion directa) entre las metas de aprendizaje y las actividades desarrolladas en clase</h3><div class="chart"></div></div>
+
+        <div class="div_RootBody" id="bar_chart_6"><h3 class="h3_Body"> P6. Los objetivos de aprendizaje fueron comunicados clarametne</h3><div class="chart"></div></div>
+
+        <div class="div_RootBody" id="bar_chart_7"><h3 class="h3_Body"> P7. Las actividades del modulo me preparan para las evaluaciones </h3><div class="chart"></div></div>
+
+        <div class="div_RootBody" id="bar_chart_8"><h3 class="h3_Body"> P8. Se comunico el contenido del modulo al inicio de clases </h3><div class="chart"></div></div> 
+
+
+        <div class="div_RootBody" id="bar_chart_9"><h3 class="h3_Body"> P9. La estructura del modulo es clara </h3><div class="chart"></div></div>
+
+        <div class="div_RootBody" id="bar_chart_10"><h3 class="h3_Body"> P10. Las temáticas son relevantes para su área de estudio o trabajo </h3><div class="chart"></div></div>
+
+
+        <div class="div_RootBody" id="bar_chart_11"><h3 class="h3_Body"> P11.El contenido es suficientemente adaptado al área de estudio o trabajo </h3><div class="chart"></div></div>
+
+        <div class="div_RootBody" id="bar_chart_12">
+            <h3 class="h3_Body"> P12. Hay un balance entre teoria y practica?  </h3>
+            <div class="chart"> </div>
+        </div> 
+
+            <div class="div_RootBody" id="bar_chart_13">
+                <h3 class="h3_Body"> P13. La metodología de enseñanza esta orientada hacia el desarrollo de competencias? </h3>
+                <div class="chart"></div>
+            </div>
+
+            <div class="div_RootBody" id="bar_chart_14">
+                <h3 class="h3_Body"> P14. La documentacion y los materiales educativos son útiles para alcanzar los objetivos del modulo?  </h3>
+                <div class="chart"></div>
+            </div>
+
+            <div class="div_RootBody" id="bar_chart_15">
+                <h3 class="h3_Body"> P15. La documentación y los materiales educativos fueron entregados a tiempo?  </h3>
+                <div class="chart"></div>
+            </div>
+
+            <div class="div_RootBody" id="bar_chart_16">
+                <h3 class="h3_Body"> P16. La forma de evaluación es conocida?  </h3>
+                <div class="chart"></div>
+            </div>
+
+            <div class="div_RootBody" id="bar_chart_17">
+                <h3 class="h3_Body"> P17. Cual es la lección mas importante de este modulo? </h3>
+                        <div class="chart"></div> 
+            </div>
+
+                    <div class="div_RootBody" id="bar_chart_18"><h3 class="h3_Body"> P18. ¿Qué sugerencias tienes para mejorar el modulo?        </h3>
+                        <div class="chart"></div>
+                    </div>
+
+                    <div class="div_RootBody" id="bar_chart_19">
+                        <h3 class="h3_Body"> P19. Por favor de una evaluacion simple del 1-10 de este modulo </h3>
+                        <div class="chart"></div>
+                    </div>
+
+                    <script type="text/javascript">
+                    //function drawHorizontalBarChart(chartID, dataSet, selectString, colors) {
+                    for (var key in dataSet) {
+                        //create new div for this guy
+                            var cur_id = Object.keys(dataSet[key])[0];
+                            console.log(cur_id);
+                            console.log(dataSet[key][cur_id]);
+                            drawHorizontalBarChart("Bars"+key, dataSet[key][cur_id], "#bar_chart_"+key+" .chart", "colorScale20b");
+                    }
+                    /*drawHorizontalBarChart("Bars2", dataSet2, "#bar_chart_2 .chart", "colorScale20b");
+                      drawHorizontalBarChart("Bars3", dataSet3, "#bar_chart_3 .chart", "colorScale10");*/
+                    </script>
+
+    </body>
+
+</html>

@@ -85,8 +85,6 @@ def __processEncuesta(encuesta, valid):
 
     transformation = {'Totalmente de acuerdo':10, 'Generalmente de acuerdo':7.5, 'Generalmente en desacuerdo':5, 'Totalmente en desacuerdo':1}
 
-    #THIS IS UGLY as shit. This needs to go in the database so that we can configure it. But not now.
-    user_comment = ['Nombre de usuario','P18. ¿Qué sugerencias tienes para mejorar el modulo?        ']
 
     encuesta = Encuesta.objects.get(id = encuesta)
     #load the results
@@ -103,8 +101,11 @@ def __processEncuesta(encuesta, valid):
     student_score = list()
     for row in reader:
         #get the comments and such
-        comments.append((row['Nombre de usuario'], row['P18. ¿Qué sugerencias tienes para mejorar el modulo?        ']))
-        students.append(row['Nombre de usuario'])
+        if 'Nombre de usuario' in row:
+            comments.append((row['Nombre de usuario'], row['P18. ¿Qué sugerencias tienes para mejorar el modulo?']))
+            students.append(row['Nombre de usuario'])
+        else:
+            comments.append(('Nombre de usuario no disponible', row['P18. ¿Qué sugerencias tienes para mejorar el modulo?']))
         if row['P19. Por favor de una evaluacion simple del 1-10 de este modulo']:
             student_score.append(int(row['P19. Por favor de una evaluacion simple del 1-10 de este modulo']))
         for key in row.keys():
@@ -143,19 +144,49 @@ def details(request, encuesta):
     for i in (range(1,20)):
         valid.append('P'+str(i))
 
-    (values,x,x, x) =  __processEncuesta(encuesta,valid)
+    #Data Used for this example...
+    #var dataSet1 = [
+    #  {legendLabel: "Legend String 1", magnitude: 54, link: "http://www.if4it.com/SYNTHESIZED/DISCIPLINES/Visualization_Management_Home_Page.html"},
+
+    encuesta = Encuesta.objects.get(id = encuesta)
+    #load the results
+    csvdata = encuesta.csv
+    reader = csv.DictReader(io.StringIO(csvdata),quotechar='"', dialect=csv.QUOTE_ALL, delimiter=',', lineterminator='\n')
+    next(reader, None)  # skip the header
     json_data = list()
-    composite_score = 0 
-    for tag in values.keys():
-        data = []
-        for bin in [0,1,2,3,4]:
-            data.append({'bin': bin, 'count':values[tag].count(bin)})
-            #add the score to determine the composite score afterwards.
-            composite_score += values[tag].count(bin)
-        histogram = {'name': tag , 'data':data}
-        json_data.append(histogram)
+    choices = ['Totalmente de acuerdo', 'Generalmente de acuerdo', 'Generalmente en desacuerdo', 'Totalmente en desacuerdo']
+    collected_scores = defaultdict()
+    for row in reader:
+        #get the comments and such
+        for id_key in row.keys():
+            key = id_key.strip().split('.')[0]
+            if (key in valid):
+                if not key in collected_scores:
+                    collected_scores[key] = list()
+                if row[id_key] and row[id_key] in choices:
+                    collected_scores[key].append(row[id_key])
+
+    values = list()
+    for key in collected_scores:
+        histogram = defaultdict(list)
+        for choice in choices:
+            histogram[key].append({'legendLabel': choice, 'magnitude': collected_scores[key].count(choice)})
+        values.append(histogram)
+
+
+#    (values,x,x, x) =  __processEncuesta(encuesta,valid)
+#    json_data = list()
+#    composite_score = 0 
+#    for tag in values.keys():
+#        data = []
+#        for bin in [1,5,7.5,10]:
+#            data.append({'legendLabel': tag, 'magnitude':values[tag].count(bin), 'link':'#'})
+#            #add the score to determine the composite score afterwards.
+#            composite_score += values[tag].count(bin)
+#        histogram = {'title': tag , 'data':data}
+#        json_data.append(histogram)
     #the composite score is just the average score
-    final_json = json.dumps(json_data)
+    final_json = json.dumps(values)
 
     context = {'json' : final_json}
     return HttpResponse(template.render(context, request))
