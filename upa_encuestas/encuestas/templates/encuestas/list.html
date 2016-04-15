@@ -15,6 +15,21 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="stylesheet" href="{% static "encuestas/assets/css/main.css" %}" />
         <link rel="stylesheet" href="{% static "encuestas/assets/css/jquery-ui.css" %}">
+
+
+		<!-- Scripts -->
+        <script src="{%static "encuestas/assets/js/jquery.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/jquery.scrollex.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/jquery.scrolly.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/skel.min.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/util.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/main.js" %}"></script>
+        <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
+        <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
+
+
+
+
 	</head>
     
 	<body>
@@ -25,8 +40,8 @@
 					<nav>
 						<ul>
                             <li><a href="/encuestas/">Inicio</a></li>
-                            <li><a href="#lista">Lista de encuestas</a></li>
-							<li><a href="#agregar">Agregar encuesta</a></li>
+                            <!--<li><a href="#lista">Lista de encuestas</a></li>-->
+                            <!--<li><a href="#agregar">Agregar encuesta</a></li>-->
                             {% if user.is_authenticated %}
                                 <li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>
                             {%endif%}
@@ -45,7 +60,7 @@
                                 <a href="/encuestas/delete/{{i.1}}/{{entity_type}}"><i class="fa fa-times"></i></a>
                                     {% if encuestas|length > 1 %}
                                     <div style="margin-top:15px">
-                                        <a href="#" id="scrollableTag" class="fa fa-expand">Mostrar m&aacute;s</a>
+                                        <p id="scrollableTag">Mostrar m&aacute;s</p>
                                         <div id="scrollable">
                                             <ul class="actions">
                                                 {% for i in encuestas|slice:"1:" %}
@@ -65,7 +80,7 @@
 					</section>
 		<!-- Wrapper -->
 				<!-- Intro -->
-					<section id="agregar" class="wrapper style1 fullscreen fade-up">
+					<!--<section id="agregar" class="wrapper style1 fullscreen fade-up">
 						<div class="inner">
                             <h1>Agregar encuesta</h1>
                             <form action="/encuestas/upload/{{entity_id}}/{{entity_type}}/" method="post" enctype="multipart/form-data">
@@ -73,32 +88,25 @@
                                     <input id="submit" type="submit" value="Subir" name="submit">
                             </form>
 						</div>
-					</section>
+                        </section>-->
 			</div>
 
-		<!-- Scripts -->
-        <script src="{%static "encuestas/assets/js/jquery.min.js" %}"></script>
-        <script src="{%static "encuestas/assets/js/jquery.scrollex.min.js" %}"></script>
-        <script src="{%static "encuestas/assets/js/jquery.scrolly.min.js" %}"></script>
-        <script src="{%static "encuestas/assets/js/skel.min.js" %}"></script>
-        <script src="{%static "encuestas/assets/js/util.js" %}"></script>
-        <script src="{%static "encuestas/assets/js/main.js" %}"></script>
-        <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
-        <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
         <script>
             $( document ).ready(function() {
-                $('#submit').prop("disabled", true);
+
+                /*If we want to upload an element
+                   $('#submit').prop("disabled", true);
 
                 $('#fileToUpload').on("change", function() {
                     $('#submit').prop('disabled', !$(this).val()); 
-                });
+                });*/
 
                 $("#scrollable").hide();
 
-                $( "#scrollableTag" ).click(function() {
-                    $('#scrollable').toggle();
+                $( "#scrollableTag" ).on('click', function() {
+                    alert('hroacio');
+                    $("#scrollable").toggle(200);
                 });
-
             });
         </script>
 	</body>

@@ -66,16 +66,31 @@
 										<table>
 											<thead>
 												<tr>
-													<th>Estudiante</th>
-													<th>Comentario</th>
+                                                    {% if en_type == "2" %}
+                                                        <th>Estudiante</th>
+                                                        <th>Comentario</th>
+                                                    {% else %}
+                                                        <th>Estudiante</th>
+                                                        <th>Comentario</th>
+                                                        <th>Leccion mas importante</th>
+                                                        <th>Objetivos logrados</th>
+                                                    {% endif %}
 												</tr>
 											</thead>
 											<tbody>
-                                                {% for i in comments %}
-                                                <tr>
-                                                    <td>{{i.0}}</td><td>{{i.1}}</td>
-                                                </tr>
-                                                {% endfor %}
+                                                    {%if en_type == "2" %}
+                                                        {% for key,value in comments.items %}
+                                                        <tr>
+                                                            <td>{{key}}</td><td>{{value.0}}</td> 
+                                                        </tr>
+                                                        {% endfor %}
+                                                    {%else%}
+                                                        {% for key,value in comments.items %}
+                                                        <tr>
+                                                            <td>{{key}}</td><td>{{value.0}}</td> <td>{{value.1}}</td> <td>{{value.2}}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    {%endif%}
 											</tfoot>
 										</table>
 									</div>

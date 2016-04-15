@@ -3,11 +3,18 @@ from django.contrib.auth import authenticate, login
 from django.utils.html import escape
 from django.template import RequestContext
 from collections import defaultdict
-import json, csv, io
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
+from django.views.decorators.csrf import csrf_exempt
+
+import os
+import gspread,math
+from oauth2client.client import SignedJwtAssertionCredentials
+import pandas as pd
+import json,csv,io
+
 
 
 
@@ -33,6 +40,7 @@ def upload_file(request, en, en_type):
 ########
 
 @login_required
+@csrf_exempt
 def index(request):
     template = loader.get_template('encuestas/index.html')
 
@@ -41,6 +49,59 @@ def index(request):
 
     context = { 'profesores': profesores, 'clases': clases}
     return HttpResponse(template.render(context, request))
+
+@login_required
+@csrf_exempt
+def syncEncuestas(request):
+
+    template = loader.get_template('encuestas/index.html')
+
+    file_dir = os.path.dirname(__file__)  # get current directory
+
+    SCOPE = ["https://spreadsheets.google.com/feeds"]
+    SECRETS_FILE = os.path.join(file_dir,"Encuestas-6752894900ec.json")
+
+    json_key = json.load(open(SECRETS_FILE))
+    # Authenticate using the signed key
+    credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], SCOPE)
+    gc = gspread.authorize(credentials)
+    for sheet in gc.openall():
+        sheet_title = sheet.title
+        workbook = gc.open(sheet_title)
+        # Get the first sheet
+        sheet = workbook.sheet1
+        # Extract all data into a dataframe
+        data = pd.DataFrame(sheet.get_all_records())
+        #check if it is prof. encuestas or class encuesta
+        if sheet_title.strip().split('.')[0] == "Prof":
+            #the name comes as: Prof. Horacio Caniza (Responses). So, we need the Horacio Caniza alone
+            profesor_name = sheet_title.strip().split('.')[1].split('(')[0].strip()
+            try:
+                profesor_object = Profesor.objects.get(nombre = profesor_name)
+            except:
+                #if we have not found the profesor, then we do nothing, we just continue and add the new encuesta
+                profesor_object = Profesor(nombre = profesor_name)
+                profesor_object.save()
+
+            new_encuesta = Encuesta(profesor = profesor_object, clase = None, csv = data.to_csv())
+            new_encuesta.save()
+        else:
+            #the name comes as: Introduccion a la computacion (Responses). So, we need the Introduccion a la computacion alone
+            encuesta_name = sheet_title.strip().split('(')[0].strip()
+            try:
+                clase_object = Clase.objects.get(nombre = encuesta_name)
+            except:
+            #the clase already exists, and so we just add the encuesta
+                #the clase does not exist, so just create a new one.
+                clase_object = Clase(nombre = encuesta_name )
+                clase_object.save()
+            
+            new_encuesta = Encuesta(profesor = None, clase = clase_object, csv = data.to_csv())
+            new_encuesta.save()
+
+
+    return HttpResponse(template.render(request))
+            
 
 @login_required
 def lista_encuestas(request, en, en_type):
@@ -63,6 +124,7 @@ def lista_encuestas(request, en, en_type):
 
     return HttpResponse(template.render(context, request))
 
+
 @login_required
 def delete(request, encuesta, en):
     #get the clase and profesor this encuesta belongs to.
@@ -79,44 +141,89 @@ def delete(request, encuesta, en):
     context = {'en': str(entity), 'entity_type':str(en)}
     return redirect('lista', en=str(entity), en_type=str(en))
 
-
-def __processEncuesta(encuesta, valid):
-
-
-    transformation = {'Totalmente de acuerdo':10, 'Generalmente de acuerdo':7.5, 'Generalmente en desacuerdo':5, 'Totalmente en desacuerdo':1}
-
+def processEncuestaPandas(encuesta, valid_questions):
+    transformation = {'Totalmente de acuerdo':10, 'Generalmente de acuerdo':7.5, 'Generalmente en desacuerdo':5, 'Totalmente en desacuerdo':1, 'Si':10, 'No':5}
 
     encuesta = Encuesta.objects.get(id = encuesta)
     #load the results
-
     csvdata = encuesta.csv
-    reader = csv.DictReader(io.StringIO(csvdata),quotechar='"', dialect=csv.QUOTE_ALL, delimiter=',', lineterminator='\n')
+    reader = pd.read_csv(io.StringIO(csvdata), quotechar = '"', delimiter = ',', lineterminator = '\n',index_col=0)
+    #here we check whether it is a professor or a module
+    if not encuesta.profesor:#clase
+        en_type = '1'
+        column_names = {'P1. Los objetivos de aprendizaje del módulo son comprensibles':'objectivos_comprensibles',
+                 'P2. El curso logra hacerme entender la materia':'logra_hacerme_entender',
+                 'P3. El curso logra despertar mi interés hacia el contenido':'despertar_interes',
+                 'P4. Las metas de aprendizaje están bien formuladas':'metas_bien_formuladas',
+                 'P5. Hay una alineación (relación directa) entre las metas de aprendizaje y las actividades desarrolladas en clase':'alineacion',
+                 'P6. Los objetivos de aprendizaje fueron comunicados claramente':'objetivos_claros',
+                 'P7. Las actividades del módulo me preparan para las evaluaciones':'preparan_para_evaluacion',
+                 'P8. Se comunico el contenido del modulo al inicio de clases':'contenido_comunicado',
+                 'P9. La estructura del módulo es clara':'estructura_clara',
+                 'P10. Las temáticas son relevantes para su área de estudio o trabajo':'tematica_relevante',
+                 'P11. El contenido se adapta al área de estudio o trabajo': 'contenido_adaptado',
+                 'P12. Hay un balance entre teoría y práctica':'balance_teoria',
+                 'P13. La metodología de enseñanza esta orientada hacia el desarrollo de competencias':'competencias',
+                 'P14. La documentación y los materiales educativos son útiles para alcanzar los objetivos del módulo':'materiales_utiles',
+                 'P15. La documentación y los materiales educativos fueron entregados a tiempo': 'materiales_a_tiempo',
+                 'P16. La forma de evaluación es conocida':'evaluacion_conocida',
+                 'P17. ¿Cuál es la lección mas importante de este módulo?':'leccion_mas_importante',
+                 'P18. ¿Qué sugerencias tienes para mejorar el módulo?':'sugerencias',
+                 'P19. Por favor de una evaluacion simple del 1-10 de este módulo':'evaluacion_simple',
+                 '¿Cuál fue el motivo principal para llevar este módulo?':'motivo', 
+                 '¿Lograste el objetivo del módulo?':'objetivo_logrado',
+                 'Sexo':'sexo','Timestamp':'timestamp', 'Username':'username'}
 
-    next(reader, None)  # skip the header
-    #prepare for the values
-    values = dict()
-    #prepare for the students and the comments
-    comments = list()
-    students = list()
-    student_score = list()
-    for row in reader:
-        #get the comments and such
-        if 'Nombre de usuario' in row:
-            comments.append((row['Nombre de usuario'], row['P18. ¿Qué sugerencias tienes para mejorar el modulo?']))
-            students.append(row['Nombre de usuario'])
-        else:
-            comments.append(('Nombre de usuario no disponible', row['P18. ¿Qué sugerencias tienes para mejorar el modulo?']))
-        if row['P19. Por favor de una evaluacion simple del 1-10 de este modulo']:
-            student_score.append(int(row['P19. Por favor de una evaluacion simple del 1-10 de este modulo']))
-        for key in row.keys():
-            if row[key] and (key.strip().split('.')[0] in valid) and row[key] in transformation.keys():
-                if key in values:
-                    values[key].append(transformation[row[key]])
-                else:
-                    values[key] = list()
+        #replace the names with simpler ones.
+        reader.rename(columns=column_names, inplace=True)
 
-    return (values,student_score, students, comments)
+        #these columns require special treamtmen
+        exclude_columns = ['objetivo_logrado', 'sugerencias','sexo','leccion_mas_importante', 'timestamp','username', 'evaluacion_simple', 'motivo']
 
+        #here we store the simple evaluation and various comments made by the students.
+        student_score = [i for i in reader['evaluacion_simple'] if not math.isnan(float(i))]
+        comments = [[i for i in reader['username']], [i for i in reader['sugerencias']], [i for i in reader['leccion_mas_importante']], [i for i in reader['objetivo_logrado']]]
+        students_comments = {z[0]:list(z[1:]) for z in zip(*comments)}
+
+
+    else: #profesor.
+        en_type = '2'
+        column_names  = {'P1. El Profesor esta bien preparado para las clases':'preparado',
+                   'P2. El Profesor domina la parte teórica del módulo ':'domina_teoria',
+                   'P3. El Profesor tiene suficiente experiencia práctica en la temática ':'domina_practica',
+                   'P4. El Profesor aplica una metodología que ayuda a entender contenidos y cuestiones complejas':'metodologia',
+                   'P5. El Profesor motiva a través de una metodología interactiva ':'motiva_interactiva',
+                   'P6. El Profesor utiliza suficientes casos prácticos':'casos_practicos',
+                   'P7. El Profesor aplica suficientes trabajos en grupo':'trabajos_en_grupo',
+                   'P8. El Profesor esta disponible para atender consultas':'disponible',
+                   'P9. El trato entre el Profesor y los estudiantes refleja respeto mutuo ':'respeto',
+                   'P10. Por favor de una evaluacion simple del 1-10 de este profesor':'evaluacion_simple',
+                   '¿Que le ha gustado y que sugerencias tiene Usted para el Profesor?':'sugerencias',
+                   'Timestamp':'timestamp', 'Username':'username'}
+        #replace the names with simpler ones.
+        reader.rename(columns=column_names, inplace=True)
+
+        exclude_columns = ['evaluacion_simple', 'sugerencias','timestamp','username']
+
+        #check for nan.. this will not happen in fugure queries where this is checked.
+
+        student_score = [i for i in reader['evaluacion_simple'] if not math.isnan(float(i))]
+
+        comments = [[i for i in reader['username']], [i for i in reader['sugerencias']]]
+        students_comments = {z[0]:list(z[1:]) for z in zip(*comments)}
+
+    #reverse the column names just to have them for labels in the graph.
+    inv_column_names = {v: k for k, v in column_names.items()}
+    #preapare for the values.
+    values = defaultdict(list)
+    for column in [i for i in list(reader) if i not in exclude_columns]:
+        #the question will always come, but it might happen that one of the questions was not made mandatory, an so we get a nan. we need to skip.
+        values[inv_column_names[column]].extend([transformation[j] for j in reader[column] if j in transformation])
+
+    return (values,student_score, students_comments, en_type)
+
+
+@login_required
 def processEncuesta(request, encuesta):
     template = loader.get_template('encuestas/results.html')
     colours = [ '#5d8aa8', '#f0f8ff', '#e32636', '#efdecd', '#e52b50', '#ffbf00', '#ff033e', '#9966cc', '#a4c639', '#f2f3f4', '#cd9575', '#915c83', '#faebd7', '#008000', '#8db600', '#fbceb1', '#00ffff']
@@ -126,15 +233,19 @@ def processEncuesta(request, encuesta):
     for i in (range(1,20)):
         valid.append('P'+str(i))
 
-    (values,student_score, students,comments) =  __processEncuesta(encuesta, valid)
+    #(values,student_score, students,comments) =  __processEncuesta(encuesta, valid)
+    (values,student_score, comments, en_type) =  processEncuestaPandas(encuesta, valid)
 
     final_csv = list()
-    for key in values.keys():
+    i = 0
+    for i, key in enumerate(values.keys()):
         if key.split('.')[0] in valid:
-            final_csv.append({'weight': 1, 'score' : np.mean(values[key]), 'label': key, 'id':key.split('.')[0], 'color': colours[valid.index(key.split('.')[0])]})
+
+            final_csv.append({'weight': 1, 'score' : np.mean(values[key]), 'label': key, 'id':key.split('.')[0], 'color': colours[i]})
     final_csv = json.dumps(final_csv)
 
-    context = {'csv' : final_csv, 'student_score': np.mean(student_score),'en_id':encuesta, 'comments':comments, 'students': students}
+    #context = {'csv' : final_csv, 'student_score': np.mean(student_score),'en_id':encuesta, 'comments':comments, 'students': students}
+    context = {'en_type':en_type,'csv' : final_csv, 'student_score': np.mean(student_score),'en_id':encuesta, 'comments':comments, 'students': list(comments.keys())}
     return HttpResponse(template.render(context, request))
 
 def details(request, encuesta):
