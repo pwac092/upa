@@ -26,11 +26,11 @@
         <section id="sidebar">
                 <nav>
                     <ul>
-                        <li><a href="/encuestas/">Inicio</a></li>
+                        <li><a href="#" id="home">Inicio</a></li>
                         <li><a href="#comentarios">Comentarios</a></li>
-                        <li><a href="/encuestas/details/{{en_id}}">Detalles</a></li>
+                        <!--<li><a href="/encuestas/details/{{en_id}}">Detalles</a></li>-->
                         {% if user.is_authenticated %}
-                            <li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>
+                            <li><a href="#" id="logout">Cerrar sesi&oacute;n</a></li>
                         {%endif%}
                     </ul>
                 </nav>
@@ -128,6 +128,15 @@
   </body>
 
   <script>
+        $( document ).ready(function() {
+            $("#home").click(function(){
+                window.location.replace("/encuestas/");
+            });
+            $("#logout").click(function(){
+                window.location.replace("/encuestas/logout");
+            });
+        });
+
 
         function chunkString(str, size) {
               var numChunks = Math.ceil(str.length / size), chunks = new Array(numChunks);

@@ -54,8 +54,6 @@ def index(request):
 @csrf_exempt
 def syncEncuestas(request):
 
-    template = loader.get_template('encuestas/index.html')
-
     file_dir = os.path.dirname(__file__)  # get current directory
 
     SCOPE = ["https://spreadsheets.google.com/feeds"]
@@ -100,7 +98,7 @@ def syncEncuestas(request):
             new_encuesta.save()
 
 
-    return HttpResponse(template.render(request))
+    return HttpResponse(json.dumps({'Success':'Ok'}), content_type="application/json")
             
 
 @login_required

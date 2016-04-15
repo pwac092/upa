@@ -17,6 +17,38 @@
 
         <link rel="stylesheet" href="{% static "encuestas/assets/css/main.css" %}" />
         <link rel="stylesheet" href="{% static "encuestas/assets/css/jquery-ui.css" %}">
+        <style>
+            /* Start by setting display:none to make this hidden.
+               Then we position it in relation to the viewport window
+               with position:fixed. Width, height, top and left speak
+               for themselves. Background we set to 80% white with
+               our animation centered, and no-repeating */
+            .modal {
+                display:    none;
+                position:   fixed;
+                z-index:    1000;
+                top:        0;
+                left:       0;
+                height:     100%;
+                width:      100%;
+                background: rgba( 255, 255, 255, .8 ) 
+                            url({% static "encuestas/assets/images/ajax-loader.gif"%} );
+                            50% 50% 
+                            no-repeat;
+            }
+
+            /* When the body has the loading class, we turn
+               the scrollbar off with overflow:hidden */
+            body.loading {
+                overflow: hidden;   
+            }
+
+            /* Anytime the body has the loading class, our
+               modal element will be visible */
+            body.loading .modal {
+                display: block;
+            }
+        </style>
 
 	</head>
     
@@ -29,8 +61,8 @@
 							<li><a href="#clases">Clases</a></li>
 							<li><a href="#profesores">Profesores</a></li>
                             {% if user.is_authenticated %}
-                                <li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>
-                                <li><a href="/encuestas/sync">Sincronizar encuestas</a></li>
+                            <!--<li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>-->
+                                <li><a href="#" id="sync">Sincronizar encuestas</a></li>
                             {%endif%}
                             <!--<li><a href="#alumnos">Alumnos</a></li>-->
 						</ul>
@@ -82,6 +114,11 @@
 						</div>
                         </section>-->
 			</div>
+
+        <div id="dialogER" title="Error. Por favor intente m&aacute;s tarde">
+          <p>El proceso de sincronizaci&aacute; ha fallado. La falla m&aacutes; com&uacute;n es causada por problemas en la conexi&oacute;n de internet del servidor. Puede volver a tratar en unos minutos, y si el servicio no se reestablece, por favor contacte al administrador. </p>
+        </div>
+
 		<!-- Scripts -->
         <script src="{%static "encuestas/assets/js/jquery.min.js" %}"></script>
         <script src="{%static "encuestas/assets/js/jquery.scrollex.min.js" %}"></script>
@@ -92,4 +129,28 @@
         <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
         <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
 	</body>
+    <script>
+        $( document ).ready(function() {
+            $body = $("body");
+
+            $("#sync").click(function(){
+                $.ajax ({
+                  type: "POST",
+                  url: 'encuestas/sync/',
+                  data: { },
+                  ajaxStart: function () { 
+                      $("#body").addClass("loading")
+                  },
+                  success: function(response) {
+                    $("#body").removeClass("loading")
+                  },
+                  error: function(xhr, text, error) {
+                      $body.removeClass("loading")
+                      $("#dialogER").dialog()
+                  }
+                });
+            });
+        });
+    </script>
+    <div class="modal"><!-- Place at bottom of page --></div>
 </html>

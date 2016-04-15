@@ -39,11 +39,11 @@
 			<section id="sidebar">
 					<nav>
 						<ul>
-                            <li><a href="/encuestas/">Inicio</a></li>
+                            <li><a href="#" id="home">Inicio</a></li>
                             <!--<li><a href="#lista">Lista de encuestas</a></li>-->
                             <!--<li><a href="#agregar">Agregar encuesta</a></li>-->
                             {% if user.is_authenticated %}
-                                <li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>
+                                <li><a href="#" id="logout">Cerrar sesi&oacute;n</a></li>
                             {%endif%}
 						</ul>
 					</nav>
@@ -101,10 +101,16 @@
                     $('#submit').prop('disabled', !$(this).val()); 
                 });*/
 
+                $("#home").click(function(){
+                    window.location.replace("/encuestas/");
+                });
+                $("#logout").click(function(){
+                    window.location.replace("/encuestas/logout");
+                });
+
                 $("#scrollable").hide();
 
                 $( "#scrollableTag" ).on('click', function() {
-                    alert('hroacio');
                     $("#scrollable").toggle(200);
                 });
             });
