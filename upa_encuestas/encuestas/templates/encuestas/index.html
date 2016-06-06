@@ -88,9 +88,9 @@
 						<div class="inner">
 							<h1>Clases</h1>
 							<ul class="actions">
-                                {% for i in clases %}
-                                    <li><a href="/encuestas/lista/{{i.1}}/1/" class="button scrolly">{{i.0}}</a></li>
-                                {% endfor %}
+                                                            {% for i in clases %}
+                                                                <li><a href="/encuestas/lista/{{i.1}}/1/" class="button scrolly" style="margin-top:8px">{{i.0}}</a></li>
+                                                            {% endfor %}
 							</ul>
 						</div>
 					</section>
@@ -101,7 +101,7 @@
 							<h1>Profesores</h1>
                             <ul class="actions">
                                 {% for i in profesores%}
-                                    <li><a href="/encuestas/lista/{{i.1}}/2/" class="button scrolly">{{i.0}}</a></li>
+                                    <li><a href="/encuestas/lista/{{i.1}}/2/" class="button scrolly" style="margin-top:8px">{{i.0}}</a></li>
                                 {% endfor %}
                             </ul>
                         </div>
@@ -115,9 +115,6 @@
                         </section>-->
 			</div>
 
-        <div id="dialogER" title="Error. Por favor intente m&aacute;s tarde">
-          <p>El proceso de sincronizaci&aacute; ha fallado. La falla m&aacutes; com&uacute;n es causada por problemas en la conexi&oacute;n de internet del servidor. Puede volver a tratar en unos minutos, y si el servicio no se reestablece, por favor contacte al administrador. </p>
-        </div>
 
 		<!-- Scripts -->
         <script src="{%static "encuestas/assets/js/jquery.min.js" %}"></script>
@@ -128,15 +125,32 @@
         <script src="{%static "encuestas/assets/js/main.js" %}"></script>
         <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
         <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
+
+        <div id="dialogER" title="Error. No se pudo sincronizar el servidor">
+            <p>El proceso de sincronizaci&aacute; ha fallado. Por favor intente nuevamente en unos minutos<p>
+        </div>
+
 	</body>
+
     <script>
         $( document ).ready(function() {
             $body = $("body");
 
+
+            $( "#dialogER" ).dialog({
+                  closeOnEscape: true,
+                  modal: true,
+                  position: 'top',
+                  width: 800,
+                  height: 600,
+                  autoOpen: false  ///added this line
+            });
+
+
             $("#sync").click(function(){
                 $.ajax ({
                   type: "POST",
-                  url: 'encuestas/sync/',
+                  url: 'sync/',
                   data: { },
                   ajaxStart: function () { 
                       $("#body").addClass("loading")

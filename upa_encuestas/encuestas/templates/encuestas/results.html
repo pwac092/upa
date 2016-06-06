@@ -8,7 +8,10 @@
 <html>
 	<head>
 		<title>Encuestas UPA</title>
-		<meta charset="utf-8" />
+                <meta charset="UTF-8">
+                <meta content="utf-8" http-equiv="encoding">
+
+
         <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/css/ie9.css" %}" />![endif]-->
         <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/css/ie8.css" %}" />![endif]-->
         <!--[if lte IE9] <link rel="stylesheet" href="{% static "encuestas/assets/js/ie/html5shiv.js" %}" />![endif]-->
@@ -46,8 +49,8 @@
                                 <section>
                                     <h3>Promedio</h3>
                                      <div id = "aster" class="aster"></div>
-                                    <h3>Puntaje dado por estudiantes</h3>
-                                     <div>{{student_score|floatformat}}</div>
+                                     <h3>Puntaje promedio de los estudiantes:</h3>
+                                     <h3>{{student_score|floatformat}}</h3>
                                 </section>
                                 <section>
                                     <label for="students">Buscar estudiantes</label>
@@ -114,6 +117,10 @@
 			</div>
 
 		<!-- Scripts -->
+
+        <script src="{%static "encuestas/assets/js/d3.v3.min.js" %}" charset="utf-8"></script>
+        <script src="{%static "encuestas/assets/js/d3.tip.v0.6.3.js" %}" charset="utf-8"></script>
+
         <script src="{%static "encuestas/assets/js/jquery.min.js" %}"></script>
         <script src="{%static "encuestas/assets/js/jquery.scrollex.min.js" %}"></script>
         <script src="{%static "encuestas/assets/js/jquery.scrolly.min.js" %}"></script>
@@ -122,8 +129,6 @@
         <script src="{%static "encuestas/assets/js/main.js" %}"></script>
         <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
         <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
-        <script src="{% static "encuestas/assets/js/d3.tip.v0.6.3.js" %}"></script>
-        <script src="{% static "encuestas/assets/js/d3.v3.min.js" %}"></script>
   </body>
 
   <script>
@@ -222,6 +227,7 @@
             .attr("dy", ".35em")
             .attr("text-anchor", "middle") // text-align: right
             .text(Math.round(score));
+
 
         //for the autcomplete of the students.
         var availableTags = {{students|safe}};

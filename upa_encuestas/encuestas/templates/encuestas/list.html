@@ -65,8 +65,8 @@
                                             <ul class="actions">
                                                 {% for i in encuestas|slice:"1:" %}
                                                     <li>
-                                                        <a href="/encuestas/process/{{i.1}}/" class="button scrolly">{{i.0}}</a>
-                                                        <a href="/encuestas/delete/{{i.1}}/{{entity_type}}"><i class="fa fa-times"></i></a>
+                                    <a href="/encuestas/process/{{i.1}}/" class="button scrolly" style="margin-top:5px">{{i.0}}</a>
+                                    <a href="/encuestas/delete/{{i.1}}/{{entity_type}}"><i class="fa fa-times"></i></a>
                                                     </li>
                                                 {% endfor %}
                                             </ul>
