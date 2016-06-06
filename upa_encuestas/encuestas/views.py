@@ -115,10 +115,19 @@ def lista_encuestas(request, en, en_type):
         encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(profesor = en).order_by('-fecha_creacion')]
         entity_name = nombre_profesor.nombre 
 
+    #nothing was found
     if not encuestas:
         encuestas = list()
+        sorted_encuestas = list()
+    else:
+        #store in dictionary, to organize in years.
+        sorted_encuestas = list()
+        for enc in encuestas:
+            encuesta = {'year' : enc[0].year, 'value':enc[0], 'id': enc[1]}
+            sorted_encuestas.append(encuesta)
 
-    context = {'entity_type': en_type, 'entity_id' : en, 'entity': entity_name, 'encuestas': encuestas}
+
+    context = {'entity_type': en_type, 'entity_id' : en, 'entity': entity_name, 'encuestas': encuestas, 'sorted_encuestas':sorted_encuestas}
 
     return HttpResponse(template.render(context, request))
 
