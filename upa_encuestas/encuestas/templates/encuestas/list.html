@@ -54,30 +54,44 @@
                                 <!-- Intro -->
                             <section id="lista" class="wrapper style1 fullscreen fade-up">
                                 <div class="inner">
-                                    <h1>{{entity}}</h1>
-                                    {% if sorted_encuestas|length > 0 %}
-                                    <h3>Ultima encuesta disponible:</h3>
-                                        <a href="/encuestas/process/{{encuestas.0.1}}/" class="button scrolly">{{encuestas.0.0}}</a>
-                                    {% regroup sorted_encuestas by year as yearly %}
-                                    <h3 style="margin-top:20px" >Anteriores:</h3>
-                                        <ul style="margin-top:20px">
-                                        {% for encuesta in yearly %}
-                                            <li class="expandable">{{encuesta.grouper }}
-                                                <ul>
-                                                    {% for item in encuesta.list %}
-                                                          <li class="interior"style="display:inline-block">
-                                                              <a href="/encuestas/process/{{item.id}}/" class="button scrolly" style="margin-top:5px">{{item.value}}</a>
-                                                              <a href="/encuestas/delete/{{item.id}}/{{entity_type}}"><i class="fa fa-times"></i></a>
-                                                          </li>
-                                                    {% endfor %}
+                                    <!-- for classes -->
+                                    {% if entity_type == '1' %}
+                                        <h1>{{entity}}</h1>
+                                        {% if sorted_encuestas|length > 0 %}
+                                            <h3>Ultima encuesta disponible:</h3>
+                                                <a href="/encuestas/process/{{encuestas.0.1}}/" class="button scrolly">{{encuestas.0.0}}</a>
+                                            {% regroup sorted_encuestas by year as yearly %}
+                                            <h3 style="margin-top:20px" >Anteriores:</h3>
+                                                <ul style="margin-top:20px">
+                                                {% for encuesta in yearly %}
+                                                    <li class="expandable">{{encuesta.grouper }}
+                                                        <ul>
+                                                            {% for item in encuesta.list %}
+                                                                  <li class="interior"style="display:inline-block">
+                                                                      <a href="/encuestas/process/{{item.id}}/" class="button scrolly" style="margin-top:5px">{{item.value}}</a>
+                                                                      <a href="/encuestas/delete/{{item.id}}/{{entity_type}}"><i class="fa fa-times"></i></a>
+                                                                  </li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </li>
                                                 </ul>
-                                            </li>
-                                        </ul>
-                                            <!--<li>
-                                            </li>--!>
-                                        {%endfor%}
+                                                    <!--<li>
+                                                    </li>--!>
+                                                {%endfor%}
+                                        {% else %}
+                                            <h4>No hay encuestas</h4>
+                                        {%endif%}
+                                    <!--for the teachers-->
                                     {% else %}
-                                        <h4>No hay encuestas</h4>
+                                        <h1>{{entity}}</h1>
+                                        <ul style="margin-top:20px">
+                                        {% for clas in clases %}
+                                          <li class="interior"style="display:inline-block">
+                                              <a href="/encuestas/lista/{{clas.1}}/{{entity_id}}" class="button scrolly" style="margin-top:5px">{{clas.0}}</a>
+                                          </li>
+                                        {%endfor%}
+
+                                        </ul>
                                     {%endif%}
                                 </div>
                             </section>

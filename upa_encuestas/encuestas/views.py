@@ -15,7 +15,7 @@ from oauth2client.client import SignedJwtAssertionCredentials
 import pandas as pd
 import json,csv,io
 import hashlib
-
+import datetime
 
 
 
@@ -25,7 +25,7 @@ from .models import Profesor, Clase, Encuesta
 
 # Upload form
 @csrf_exempt
-@login_required
+#@login_required
 def upload_file(request, en, en_type):
 
     content = request.FILES['file'].read()
@@ -40,7 +40,7 @@ def upload_file(request, en, en_type):
     return redirect('lista', en=str(en), en_type=str(en_type))
 ########
 
-@login_required
+#@login_required
 @csrf_exempt
 def index(request):
     template = loader.get_template('encuestas/index.html')
@@ -51,7 +51,7 @@ def index(request):
     context = { 'profesores': profesores, 'clases': clases}
     return HttpResponse(template.render(context, request))
 
-@login_required
+#@login_required
 @csrf_exempt
 def syncEncuestas(request):
 
@@ -64,45 +64,36 @@ def syncEncuestas(request):
     # Authenticate using the signed key
     credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], SCOPE)
     gc = gspread.authorize(credentials)
+    #get the year for the current encuestas
+    now = datetime.datetime.now()
+    cur_year = str(now.year)
     for sheet in gc.openall():
         sheet_title = sheet.title
-        workbook = gc.open(sheet_title)
-        # Get the first sheet
-        sheet = workbook.sheet1
-        # Extract all data into a dataframe
-        data = pd.DataFrame(sheet.get_all_records())
-        #check if it is prof. encuestas or class encuesta
         if sheet_title.strip().split('.')[0] == "Prof":
-            #the name comes as: Prof. Horacio Caniza (Responses). So, we need the Horacio Caniza alone
-            profesor_name = sheet_title.strip().split('.')[1].split('(')[0].strip()
-            try:
-                profesor_object = Profesor.objects.get(nombre = profesor_name)
-            except:
-                #if we have not found the profesor, then we do nothing, we just continue and add the new encuesta
-                profesor_object = Profesor(nombre = profesor_name)
-                profesor_object.save()
-            #check if this particular encuesta already exists.
-            #we fetch the latest encuesta and if it is the same (hash of the entire record) do not save.
-            encuestas = list([i for i in Encuesta.objects.filter(profesor = profesor_object.id).order_by('-fecha_creacion')])
-            if len(encuestas) > 0:
-                if hashlib.sha224(encuestas[-1].csv.encode('utf-8')).hexdigest() != hashlib.sha224(data.to_csv().encode('utf-8')).hexdigest():
-                    new_encuesta = Encuesta(profesor = profesor_object, clase = None, csv = data.to_csv())
-                    new_encuesta.save()
-            else:
-                new_encuesta = Encuesta(profesor = profesor_object, clase = None, csv = data.to_csv())
-                new_encuesta.save()
-
+            continue
         else:
+            workbook = gc.open(sheet_title)
+            # Get the first sheet
+            sheet = workbook.sheet1
+            # Extract all data into a dataframe
+            data = pd.DataFrame(sheet.get_all_records())
+            #check if it is prof. encuestas or class encuesta
+            #this is important because we first create all the classes.
             #the name comes as: Introduccion a la computacion (Responses). So, we need the Introduccion a la computacion alone
             encuesta_name = sheet_title.strip().split('(')[0].strip()
+            #try to get the clase_object, if it exists.
             try:
                 clase_object = Clase.objects.get(nombre = encuesta_name)
             except:
             #the clase already exists, and so we just add the encuesta
                 #the clase does not exist, so just create a new one.
-                clase_object = Clase(nombre = encuesta_name )
+                clase_object = Clase(nombre = encuesta_name)
                 clase_object.save()
+
+            #get all the encuestas for this particular clase. we sort it based on year. so we only check if the last one changed
+            #becuase this is the one we are interested in. That is, the logic works as the class is an independent entity.
             encuestas = list([i for i in Encuesta.objects.filter(clase = clase_object.id).order_by('-fecha_creacion')])
+            #check for duplicated encuestas.
             if len(encuestas) > 0:
                 if hashlib.sha224(encuestas[-1].csv.encode('utf-8')).hexdigest() != hashlib.sha224(data.to_csv().encode('utf-8')).hexdigest():
                     new_encuesta = Encuesta(profesor = None, clase = clase_object, csv = data.to_csv())
@@ -111,22 +102,82 @@ def syncEncuestas(request):
                 new_encuesta = Encuesta(profesor = None, clase = clase_object, csv = data.to_csv())
                 new_encuesta.save()
 
+        #process the profesores sheet
+    for sheet in gc.openall():
+        sheet_title = sheet.title
+        #we need to skip the ones thata are not for professors.
+        if sheet_title.strip().split('.')[0] != "Prof":
+            continue
+        workbook = gc.open(sheet_title)
+        # Get the first sheet
+        sheet = workbook.sheet1
+        # Extract all data into a dataframe
+        data = pd.DataFrame(sheet.get_all_records())
+        #the name comes as: Prof. Horacio Caniza_Introduccion a la computacion (Responses). So, we need the Horacio Caniza alone
+        profesor_name = sheet_title.strip().split('.')[1].split('(')[0].strip()
+        profesor_name = profesor_name.split('_')[0].strip()
+        #get the name of the class this professor is teaching.
+        current_clase = sheet_title.strip().split('_')[1].split('(')[0].strip()
+        try:
+            profesor_object = Profesor.objects.get(nombre = profesor_name)
+        except:
+            #if we have not found the profesor, then we do nothing, we just continue and add the new encuesta
+            profesor_object = Profesor(nombre = profesor_name)
+            profesor_object.save()
+
+        #now we need to get the clase object for this particular professor.
+        #this has to exist, we have made sure. If it fails, its because I made a mistake creating the 
+        #forms.
+        current_clase_object = Clase.objects.get(nombre = current_clase)
+
+        #we fetch the latest encuesta and if it is the same (hash of the entire record) do not save.
+        encuestas = list([i for i in Encuesta.objects.filter(profesor = profesor_object.id, clase= current_clase_object.id).order_by('-fecha_creacion')])
+        if len(encuestas) > 0:
+            if hashlib.sha224(encuestas[-1].csv.encode('utf-8')).hexdigest() != hashlib.sha224(data.to_csv().encode('utf-8')).hexdigest():
+                new_encuesta = Encuesta(profesor = profesor_object, clase = current_clase_object, csv = data.to_csv())
+                new_encuesta.save()
+        else:
+            new_encuesta = Encuesta(profesor = profesor_object, clase = current_clase_object, csv = data.to_csv())
+            new_encuesta.save()
+
 
     return HttpResponse(json.dumps({'Success':'Ok'}), content_type="application/json")
             
 
-@login_required
-def lista_encuestas(request, en, en_type):
+#@login_required
+def lista_materias_profesor(request, en):
+    template = loader.get_template('encuestas/list.html')
+    profesor = Profesor.objects.get(id = en)
+
+    profesor_clases = [i.clase for i in Encuesta.objects.filter(profesor = profesor)]
+
+    entity_name = profesor.nombre 
+
+    #now we need to get the class ids to get all the classnames.
+    clases = list()
+    for clase_id in profesor_clases:
+        clases.extend([(i.nombre,i.id) for i in Clase.objects.filter(id = clase_id.id)])
+
+    context = {'entity_type': "2", 'entity_id' : en, 'entity': entity_name, 'clases':clases}
+
+
+    return HttpResponse(template.render(context, request))
+
+
+#@login_required
+def lista_encuestas(request, en, en2):
 
     template = loader.get_template('encuestas/list.html')
 
-    if en_type == "1": #clases. horrible, but works.
+    #clases. horrible, but works.
+    if en2 == "-1": 
         nombre_clase = Clase.objects.get(id = en)
         encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(clase = en).order_by('-fecha_creacion')]
         entity_name =nombre_clase.nombre 
     else:
-        nombre_profesor = Profesor.objects.get(id = en)
-        encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(profesor = en).order_by('-fecha_creacion')]
+        nombre_clase = Clase.objects.get(id = en)
+        nombre_profesor = Profesor.objects.get(id = en2)
+        encuestas = [(i.fecha_creacion,i.id) for i in Encuesta.objects.filter(clase = en , profesor = en2).order_by('-fecha_creacion')]
         entity_name = nombre_profesor.nombre 
 
     #nothing was found
@@ -141,12 +192,12 @@ def lista_encuestas(request, en, en_type):
             sorted_encuestas.append(encuesta)
 
 
-    context = {'entity_type': en_type, 'entity_id' : en, 'entity': entity_name, 'encuestas': encuestas, 'sorted_encuestas':sorted_encuestas}
+    context = {'entity_type': "1", 'entity_id' : en, 'entity': entity_name, 'encuestas': encuestas, 'sorted_encuestas':sorted_encuestas}
 
     return HttpResponse(template.render(context, request))
 
 
-@login_required
+#@login_required
 def delete(request, encuesta, en):
     #get the clase and profesor this encuesta belongs to.
 
@@ -244,7 +295,7 @@ def processEncuestaPandas(encuesta, valid_questions):
     return (values,student_score, students_comments, en_type)
 
 
-@login_required
+#@login_required
 def processEncuesta(request, encuesta):
     template = loader.get_template('encuestas/results.html')
     colours = [ '#5d8aa8', '#f0f8ff', '#e32636', '#efdecd', '#e52b50', '#ffbf00', '#ff033e', '#9966cc', '#a4c639', '#f2f3f4', '#cd9575', '#915c83', '#faebd7', '#008000', '#8db600', '#fbceb1', '#00ffff']
@@ -369,7 +420,7 @@ def elements(request):
     template = loader.get_template('encuestas/elements.html')
     return HttpResponse(template.render({}, request))
 
-@login_required
+#@login_required
 def user_logout(request):
     # Since we know the user is logged in, we can now just log them out.
     logout(request)
