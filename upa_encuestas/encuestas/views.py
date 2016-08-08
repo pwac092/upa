@@ -14,6 +14,7 @@ import gspread,math
 from oauth2client.client import SignedJwtAssertionCredentials
 import pandas as pd
 import json,csv,io
+import hashlib
 
 
 
@@ -80,9 +81,17 @@ def syncEncuestas(request):
                 #if we have not found the profesor, then we do nothing, we just continue and add the new encuesta
                 profesor_object = Profesor(nombre = profesor_name)
                 profesor_object.save()
+            #check if this particular encuesta already exists.
+            #we fetch the latest encuesta and if it is the same (hash of the entire record) do not save.
+            encuestas = list([i for i in Encuesta.objects.filter(profesor = profesor_object.id).order_by('-fecha_creacion')])
+            if len(encuestas) > 0:
+                if hashlib.sha224(encuestas[-1].csv.encode('utf-8')).hexdigest() != hashlib.sha224(data.to_csv().encode('utf-8')).hexdigest():
+                    new_encuesta = Encuesta(profesor = profesor_object, clase = None, csv = data.to_csv())
+                    new_encuesta.save()
+            else:
+                new_encuesta = Encuesta(profesor = profesor_object, clase = None, csv = data.to_csv())
+                new_encuesta.save()
 
-            new_encuesta = Encuesta(profesor = profesor_object, clase = None, csv = data.to_csv())
-            new_encuesta.save()
         else:
             #the name comes as: Introduccion a la computacion (Responses). So, we need the Introduccion a la computacion alone
             encuesta_name = sheet_title.strip().split('(')[0].strip()
@@ -93,9 +102,14 @@ def syncEncuestas(request):
                 #the clase does not exist, so just create a new one.
                 clase_object = Clase(nombre = encuesta_name )
                 clase_object.save()
-            
-            new_encuesta = Encuesta(profesor = None, clase = clase_object, csv = data.to_csv())
-            new_encuesta.save()
+            encuestas = list([i for i in Encuesta.objects.filter(clase = clase_object.id).order_by('-fecha_creacion')])
+            if len(encuestas) > 0:
+                if hashlib.sha224(encuestas[-1].csv.encode('utf-8')).hexdigest() != hashlib.sha224(data.to_csv().encode('utf-8')).hexdigest():
+                    new_encuesta = Encuesta(profesor = None, clase = clase_object, csv = data.to_csv())
+                    new_encuesta.save()
+            else:
+                new_encuesta = Encuesta(profesor = None, clase = clase_object, csv = data.to_csv())
+                new_encuesta.save()
 
 
     return HttpResponse(json.dumps({'Success':'Ok'}), content_type="application/json")

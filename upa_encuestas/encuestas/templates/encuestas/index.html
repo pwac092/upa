@@ -17,39 +17,6 @@
 
         <link rel="stylesheet" href="{% static "encuestas/assets/css/main.css" %}" />
         <link rel="stylesheet" href="{% static "encuestas/assets/css/jquery-ui.css" %}">
-        <style>
-            /* Start by setting display:none to make this hidden.
-               Then we position it in relation to the viewport window
-               with position:fixed. Width, height, top and left speak
-               for themselves. Background we set to 80% white with
-               our animation centered, and no-repeating */
-            .modal {
-                display:    none;
-                position:   fixed;
-                z-index:    1000;
-                top:        0;
-                left:       0;
-                height:     100%;
-                width:      100%;
-                background: rgba( 255, 255, 255, .8 ) 
-                            url({% static "encuestas/assets/images/ajax-loader.gif"%} );
-                            50% 50% 
-                            no-repeat;
-            }
-
-            /* When the body has the loading class, we turn
-               the scrollbar off with overflow:hidden */
-            body.loading {
-                overflow: hidden;   
-            }
-
-            /* Anytime the body has the loading class, our
-               modal element will be visible */
-            body.loading .modal {
-                display: block;
-            }
-        </style>
-
 	</head>
     
 	<body>
@@ -61,7 +28,7 @@
 							<li><a href="#clases">Clases</a></li>
 							<li><a href="#profesores">Profesores</a></li>
                             {% if user.is_authenticated %}
-                            <!--<li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>-->
+                            <li><a href="/encuestas/logout">Cerrar sesi&oacute;n</a></li>
                                 <li><a href="#" id="sync">Sincronizar encuestas</a></li>
                             {%endif%}
                             <!--<li><a href="#alumnos">Alumnos</a></li>-->
@@ -124,6 +91,8 @@
         <script src="{%static "encuestas/assets/js/util.js" %}"></script>
         <script src="{%static "encuestas/assets/js/main.js" %}"></script>
         <script src="{% static "encuestas/assets/js/jquery-ui.js" %}"></script>
+        <script src="{%static "encuestas/assets/js/jquery.blockUI.js" %}"></script>
+
         <!--[if lte IE 8]><script src="{% static "encuestas/assets/js/ie/respond.min.js" %}"></script><![endif]-->
 
         <div id="dialogER" title="Error. No se pudo sincronizar el servidor">
@@ -152,19 +121,18 @@
                   type: "POST",
                   url: 'sync/',
                   data: { },
-                  ajaxStart: function () { 
-                      $("#body").addClass("loading")
+                  beforeSend: function () { 
+                      $.blockUI({ css: { backgroundColor: '#000', color: '#fff'},  message: '<h1>Sincronizando...</h1>' });
                   },
                   success: function(response) {
-                    $("#body").removeClass("loading")
+                      $.unblockUI();
                   },
                   error: function(xhr, text, error) {
-                      $body.removeClass("loading")
+                      $.unblockUI
                       $("#dialogER").dialog()
                   }
                 });
             });
         });
     </script>
-    <div class="modal"><!-- Place at bottom of page --></div>
 </html>
